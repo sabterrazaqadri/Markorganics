@@ -1,0 +1,424 @@
+/*
+ * Admin-only styling. Imported by app/admin/layout.tsx alone, so none of it
+ * reaches a storefront route.
+ *
+ * The storefront is an apothecary shelf; this is a back office. Dense rows,
+ * small type, grey chrome, tables instead of cards, and the three family
+ * colours reduced to 8px dots.
+ */
+
+.a-shell {
+  --a-bg: #f5f5f6;
+  --a-surface: #ffffff;
+  --a-surface-2: #fafafa;
+  --a-border: #e0e1e3;
+  --a-border-strong: #c9cbcf;
+  --a-text: #1f2124;
+  --a-soft: #6b7076;
+  --a-accent: #1f2124;
+  --a-focus: #2760c4;
+  --a-danger: #b42318;
+  --a-danger-bg: #fef3f2;
+  --a-warn: #a05a00;
+  --a-warn-bg: #fff8eb;
+  --a-ok: #0a6b3d;
+  --a-ok-bg: #edfaf3;
+  --a-info: #1f4f9c;
+  --a-info-bg: #eef4fd;
+
+  background: var(--a-bg);
+  color: var(--a-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  min-height: 100dvh;
+}
+
+/* The storefront sets a display face on headings; the admin must not inherit it. */
+.a-shell h1,
+.a-shell h2,
+.a-shell h3,
+.a-shell h4 {
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  font-weight: 600;
+  text-wrap: initial;
+}
+.a-shell h1 {
+  font-size: 18px;
+}
+.a-shell h2 {
+  font-size: 14px;
+}
+.a-shell h3 {
+  font-size: 13px;
+}
+.a-shell p {
+  max-width: none;
+}
+.a-shell :focus-visible {
+  outline: 2px solid var(--a-focus);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+/* --------------------------------------------------------------- layout */
+
+.a-side {
+  background: #1f2124;
+  color: #d7d9dc;
+}
+.a-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  color: #c7cace;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.a-nav-link:hover {
+  background: #2c2f33;
+  color: #fff;
+}
+.a-nav-link[aria-current="page"] {
+  background: #3a3e44;
+  color: #fff;
+  font-weight: 600;
+}
+.a-nav-group {
+  padding: 10px 10px 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #83888e;
+}
+.a-nav-count {
+  background: #4a4f56;
+  color: #eceef0;
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------- primitives */
+
+.a-card {
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: 6px;
+}
+.a-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--a-border);
+}
+
+.a-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--a-border-strong);
+  border-radius: 5px;
+  background: var(--a-surface);
+  color: var(--a-text);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 100ms ease, border-color 100ms ease;
+}
+.a-btn:hover:not(:disabled) {
+  background: #f1f1f2;
+}
+.a-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.a-btn-primary {
+  background: var(--a-accent);
+  border-color: var(--a-accent);
+  color: #fff;
+}
+.a-btn-primary:hover:not(:disabled) {
+  background: #34383d;
+}
+.a-btn-danger {
+  color: var(--a-danger);
+  border-color: #e8b4b0;
+}
+.a-btn-danger:hover:not(:disabled) {
+  background: var(--a-danger-bg);
+}
+.a-btn-xs {
+  height: 24px;
+  padding: 0 7px;
+  font-size: 11.5px;
+  border-radius: 4px;
+}
+.a-btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  height: auto;
+  color: var(--a-info);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.a-input,
+.a-select,
+.a-textarea {
+  display: block;
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid var(--a-border-strong);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--a-text);
+  font-size: 12.5px;
+  font-family: inherit;
+}
+.a-textarea {
+  min-height: 72px;
+  padding: 6px 8px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.a-input:focus,
+.a-select:focus,
+.a-textarea:focus {
+  border-color: var(--a-focus);
+  outline: none;
+  box-shadow: 0 0 0 1px var(--a-focus);
+}
+.a-input[aria-invalid="true"],
+.a-textarea[aria-invalid="true"] {
+  border-color: var(--a-danger);
+}
+.a-input-xs {
+  min-height: 24px;
+  padding: 2px 5px;
+  font-size: 12px;
+}
+.a-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--a-soft);
+  margin-bottom: 3px;
+}
+.a-hint {
+  font-size: 11px;
+  color: var(--a-soft);
+  margin-top: 3px;
+}
+.a-err {
+  font-size: 11.5px;
+  color: var(--a-danger);
+  margin-top: 3px;
+}
+
+/* -------------------------------------------------------------- tables */
+
+.a-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.a-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--a-surface-2);
+  border-bottom: 1px solid var(--a-border);
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--a-soft);
+  white-space: nowrap;
+}
+.a-table tbody td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--a-border);
+  vertical-align: middle;
+}
+.a-table tbody tr:hover {
+  background: #fafbfc;
+}
+.a-table tbody tr[data-selected="true"] {
+  background: var(--a-info-bg);
+}
+.a-num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------- chips */
+
+.a-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.a-badge-neutral {
+  background: #eceef0;
+  color: #4b5057;
+}
+.a-badge-info {
+  background: var(--a-info-bg);
+  color: var(--a-info);
+}
+.a-badge-ok {
+  background: var(--a-ok-bg);
+  color: var(--a-ok);
+}
+.a-badge-warn {
+  background: var(--a-warn-bg);
+  color: var(--a-warn);
+}
+.a-badge-danger {
+  background: var(--a-danger-bg);
+  color: var(--a-danger);
+}
+
+.a-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 5px;
+  border: 1px solid var(--a-border-strong);
+  border-radius: 3px;
+  background: #fff;
+  font-size: 11px;
+  color: var(--a-soft);
+}
+
+/* The only place the family colours appear in the admin. */
+.a-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex: none;
+}
+.a-dot-oils {
+  background: #c1841b;
+}
+.a-dot-relief {
+  background: #2e6a65;
+}
+.a-dot-home {
+  background: #2c3c8c;
+}
+
+/* ---------------------------------------------------------------- tabs */
+
+.a-tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--a-border);
+}
+.a-tab {
+  padding: 6px 10px;
+  border-bottom: 2px solid transparent;
+  color: var(--a-soft);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.a-tab:hover {
+  color: var(--a-text);
+}
+.a-tab[aria-current="page"] {
+  border-bottom-color: var(--a-accent);
+  color: var(--a-text);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------- empty + skel */
+
+.a-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--a-soft);
+}
+.a-empty h2 {
+  color: var(--a-text);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+@keyframes a-shimmer {
+  0% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+.a-skel {
+  background: #e8e9eb;
+  border-radius: 3px;
+  animation: a-shimmer 1.2s ease-in-out infinite;
+}
+
+.a-kbd {
+  display: inline-block;
+  padding: 0 4px;
+  border: 1px solid var(--a-border-strong);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 10.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--a-soft);
+}
+
+.a-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.a-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+}
+
+/* Optimistic rows fade while their action is in flight. */
+.a-pending {
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a-skel {
+    animation: none;
+  }
+}
