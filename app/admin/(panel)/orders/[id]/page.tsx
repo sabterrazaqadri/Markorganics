@@ -11,6 +11,12 @@ import { Card, DateCell, Money, OrderStatusPill, PageHeader, ORDER_STATUS_LABEL 
 import { OrderSidebar } from "@/components/admin/OrderSidebar";
 import { OrderEditor } from "@/components/admin/OrderEditor";
 import { OrderTimeline } from "@/components/admin/OrderTimeline";
+import { CourierPanel } from "@/components/admin/CourierPanel";
+import { COURIER_ADAPTERS, courierName, getCourier } from "@/lib/courier";
+import { activeShipmentFor, shipmentTimeline } from "@/lib/courier/shipments";
+import { resolveCourierCityId } from "@/lib/courier/cities";
+import { getIntegrationSettings } from "@/lib/settings";
+import { SITE_URL } from "@/config/commerce";
 
 export const metadata = { title: "Order" };
 export const dynamic = "force-dynamic";
@@ -25,9 +31,17 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const order = await getOrderById(id);
   if (!order) notFound();
 
-  const [previous, store] = await Promise.all([
+  const [previous, store, integrations, shipment] = await Promise.all([
     getPreviousOrdersByPhone(order.phone, order.id),
     getStoreSettings(),
+    getIntegrationSettings(),
+    activeShipmentFor(order.id),
+  ]);
+
+  const defaultCourier = getCourier(integrations.defaultCourier) ? integrations.defaultCourier : "postex";
+  const [shipmentEvents, mappedCityId] = await Promise.all([
+    shipment ? shipmentTimeline(shipment.id) : Promise.resolve([]),
+    resolveCourierCityId(shipment?.provider ?? defaultCourier, order.city),
   ]);
 
   const customer = order.customer;
@@ -278,16 +292,50 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           ) : null}
         </div>
 
-        <OrderSidebar
-          orderId={order.id}
-          status={order.status}
-          statusLabel={ORDER_STATUS_LABEL[order.status]}
-          internalNote={order.internalNote ?? ""}
-          tags={order.tags}
-          addressText={addressText}
-          canWrite={can(ctx.user.role, "orders:write")}
-          canDelete={can(ctx.user.role, "orders:edit")}
-        />
+        <div className="space-y-3">
+          <CourierPanel
+            orderId={order.id}
+            city={order.city}
+            cityMapped={Boolean(mappedCityId)}
+            defaultCourier={defaultCourier}
+            trackingUrl={shipment ? `${SITE_URL}/track/${shipment.trackingNumber}` : `${SITE_URL}/track`}
+            canWrite={can(ctx.user.role, "orders:write")}
+            couriers={Object.values(COURIER_ADAPTERS).map((a) => ({ id: a.id, name: a.name, verified: a.verified }))}
+            shipment={
+              shipment
+                ? {
+                    id: shipment.id,
+                    provider: shipment.provider,
+                    providerName: courierName(shipment.provider),
+                    trackingNumber: shipment.trackingNumber,
+                    status: shipment.status,
+                    rawStatus: shipment.rawStatus,
+                    labelUrl: shipment.labelUrl,
+                    cancelledAt: shipment.cancelledAt?.toISOString() ?? null,
+                    lastSyncAt: shipment.lastSyncAt?.toISOString() ?? null,
+                    lastError: shipment.lastError,
+                    events: shipmentEvents.map((e) => ({
+                      id: e.id,
+                      status: e.status,
+                      rawStatus: e.rawStatus,
+                      message: e.message,
+                      occurredAt: e.occurredAt.toISOString(),
+                    })),
+                  }
+                : null
+            }
+          />
+          <OrderSidebar
+            orderId={order.id}
+            status={order.status}
+            statusLabel={ORDER_STATUS_LABEL[order.status]}
+            internalNote={order.internalNote ?? ""}
+            tags={order.tags}
+            addressText={addressText}
+            canWrite={can(ctx.user.role, "orders:write")}
+            canDelete={can(ctx.user.role, "orders:edit")}
+          />
+        </div>
       </div>
     </>
   );

@@ -15,6 +15,13 @@
       "when": 1788348874091,
       "tag": "0001_admin_backoffice",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788378090779,
+      "tag": "0002_integrations",
+      "breakpoints": true
     }
   ]
 }

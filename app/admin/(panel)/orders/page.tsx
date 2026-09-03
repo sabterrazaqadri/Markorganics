@@ -8,6 +8,8 @@ import { listSavedViews } from "@/lib/admin/saved-views";
 import { listUsers } from "@/lib/admin/users";
 import { PageHeader, CursorPager, EmptyState, ORDER_STATUS_LABEL } from "@/components/admin/ui";
 import { OrdersTable } from "@/components/admin/OrdersTable";
+import { COURIER_ADAPTERS, getCourier } from "@/lib/courier";
+import { getIntegrationSettings } from "@/lib/settings";
 import { SavedViewBar } from "@/components/admin/SavedViewBar";
 
 export const metadata = { title: "Orders" };
@@ -31,7 +33,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: SP })
   const filter = parsed.success ? parsed.data : ordersFilterSchema.parse({});
   const view: OrderView = filter.view ?? "all";
 
-  const [{ rows, nextCursor }, counts, total, cities, tags, staff, savedViews] = await Promise.all([
+  const [{ rows, nextCursor }, counts, total, cities, tags, staff, savedViews, integrations] = await Promise.all([
     listOrders(filter),
     orderViewCounts(),
     countOrders(filter),
@@ -39,6 +41,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: SP })
     distinctOrderTags(),
     can(ctx.user.role, "staff:read") ? listUsers() : Promise.resolve([]),
     listSavedViews("orders", ctx.user.id),
+    getIntegrationSettings(),
   ]);
 
   const queryString = new URLSearchParams(
@@ -204,7 +207,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: SP })
           </EmptyState>
         </div>
       ) : (
-        <OrdersTable rows={rows} canWrite={can(ctx.user.role, "orders:write")} />
+        <OrdersTable
+          rows={rows}
+          canWrite={can(ctx.user.role, "orders:write")}
+          couriers={Object.values(COURIER_ADAPTERS).map((a) => ({ id: a.id, name: a.name, verified: a.verified }))}
+          defaultCourier={getCourier(integrations.defaultCourier) ? integrations.defaultCourier : "postex"}
+        />
       )}
 
       <CursorPager basePath="/admin/orders" params={raw} nextCursor={nextCursor} hasCursor={Boolean(filter.cursor)} />

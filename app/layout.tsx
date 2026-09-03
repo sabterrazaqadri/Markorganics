@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import Script from "next/script";
 import { BRAND_NAME, SITE_URL } from "@/config/commerce";
 import { ToastViewport } from "@/components/ui/Toast";
 import { CartHydration } from "@/components/cart/CartHydration";
+import { Analytics } from "@/components/analytics/Analytics";
+import { getStorefrontIntegrations } from "@/lib/integrations/config";
+import { DEFAULT_SETTINGS, getIntegrationSettings } from "@/lib/settings";
 import "./globals.css";
 
 // Variable fonts committed to the repo (latin subset), self-hosted by next/font.
@@ -28,7 +30,7 @@ const interTight = localFont({
   preload: true,
 });
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: `${BRAND_NAME} - Hair oils, pain relief balm and liquid neel`,
@@ -46,6 +48,40 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+/**
+ * Search Console's verification tag comes from settings rather than a
+ * constant, so claiming the domain does not need a deploy.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { searchConsoleToken } = await pixelIds();
+  if (!searchConsoleToken) return baseMetadata;
+  return { ...baseMetadata, verification: { google: searchConsoleToken } };
+}
+
+/**
+ * The root layout is the one place every page passes through, so it must not
+ * be able to fail. A database that is momentarily unreachable should cost the
+ * shop its pixels, never its storefront.
+ */
+async function pixelIds() {
+  try {
+    return await getStorefrontIntegrations();
+  } catch (err) {
+    console.error("could not read integration ids; rendering without pixels", err);
+    return { metaPixelId: "", ga4MeasurementId: "", tiktokPixelCode: "", searchConsoleToken: "" };
+  }
+}
+
+async function consentSetting(): Promise<boolean> {
+  try {
+    return (await getIntegrationSettings()).consentBanner;
+  } catch {
+    // Asking for consent we do not need is the harmless failure; loading a
+    // pixel without it is not.
+    return DEFAULT_SETTINGS.integrations.consentBanner;
+  }
+}
+
 export const viewport: Viewport = {
   themeColor: "#FCFBF8",
   colorScheme: "light",
@@ -53,23 +89,23 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const [ids, requireConsent] = await Promise.all([pixelIds(), consentSetting()]);
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${archivo.variable} ${interTight.variable}`}>
       <body className="min-h-dvh bg-paper text-ink">
         {children}
         <CartHydration />
         <ToastViewport />
-        {GA_ID ? (
-          <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
-            <Script id="ga4" strategy="afterInteractive">
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}',{anonymize_ip:true});`}
-            </Script>
-          </>
-        ) : null}
+        <Analytics
+          ids={{
+            metaPixelId: ids.metaPixelId,
+            ga4MeasurementId: ids.ga4MeasurementId,
+            tiktokPixelCode: ids.tiktokPixelCode,
+          }}
+          requireConsent={requireConsent}
+        />
       </body>
     </html>
   );

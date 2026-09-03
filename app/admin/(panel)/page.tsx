@@ -6,20 +6,26 @@ import { formatPKR } from "@/lib/money";
 import { displayPkPhone } from "@/lib/phone";
 import { abandonedCounts } from "@/lib/admin/abandoned";
 import { Card, DateCell, EmptyState, OrderStatusPill, PageHeader, StatTile } from "@/components/admin/ui";
+import { HealthStrip } from "@/components/admin/HealthStrip";
+import { integrationHealth } from "@/lib/integrations/health";
 
 export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const ctx = await requireView("orders:read");
-  const [s, abandoned] = await Promise.all([
+  const [s, abandoned, health] = await Promise.all([
     getDashboardStats(),
     can(ctx.user.role, "abandoned:read") ? abandonedCounts() : Promise.resolve(null),
+    // Only the Owner can act on a failing integration, so only the Owner is told.
+    can(ctx.user.role, "integrations:read") ? integrationHealth() : Promise.resolve(null),
   ]);
 
   return (
     <>
       <PageHeader title={`Good to see you, ${ctx.user.name.split(" ")[0]}`} subtitle="Everything that needs a decision today." />
+
+      {health ? <HealthStrip health={health} /> : null}
 
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
         <StatTile label="Orders today" value={String(s.todayCount)} sub={formatPKR(s.todayRevenuePaisa)} />

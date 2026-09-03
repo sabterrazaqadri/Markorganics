@@ -13,6 +13,7 @@ import { normalizePkPhone } from "@/lib/phone";
 import { DiscountField } from "@/components/cart/DiscountField";
 import { useCartQuote } from "@/components/cart/useCartQuote";
 import { CitySelect } from "./CitySelect";
+import { clientEventId, trackEvent } from "@/lib/analytics/client";
 
 function Field({
   id,
@@ -104,6 +105,24 @@ export function CheckoutForm() {
     }, 1200);
     return () => clearTimeout(timer);
   }, [form.fullName, form.phone, form.city, form.address, items, sessionKey, hydrated]);
+
+  /* InitiateCheckout: once per visit to this page with a non-empty cart. */
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (!hydrated || items.length === 0 || checkoutTracked.current) return;
+    checkoutTracked.current = true;
+    trackEvent({
+      event: "begin_checkout",
+      eventId: clientEventId("begin_checkout", `${sessionKey}:${items.map((i) => i.variantId).join("|")}`),
+      valuePaisa: cartSubtotal(items),
+      items: items.map((i) => ({
+        sku: i.sku,
+        name: `${i.productName} ${i.variantLabel}`.trim(),
+        quantity: i.quantity,
+        pricePaisa: i.unitPricePaisa,
+      })),
+    });
+  }, [hydrated, items, sessionKey]);
 
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));

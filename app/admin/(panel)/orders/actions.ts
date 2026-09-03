@@ -27,6 +27,16 @@ import {
   statusChangeSchema,
 } from "@/lib/validation/admin";
 import { createSavedView, deleteSavedView } from "@/lib/admin/saved-views";
+import { enqueue } from "@/lib/jobs/queue";
+import { JOB } from "@/lib/jobs/types";
+
+/** Order statuses a person can set that the customer should hear about. */
+const STATUS_TRIGGER: Partial<Record<OrderStatus, string>> = {
+  confirmed: "order_confirmed",
+  shipped: "order_shipped",
+  delivered: "order_delivered",
+  cancelled: "order_cancelled",
+};
 
 function refreshOrder(id: string) {
   revalidatePath(`/admin/orders/${id}`);
@@ -54,6 +64,17 @@ export async function changeStatusAction(
       before: { status: result.from },
       after: { status: result.to, note: parsed.note ?? null, restocked: result.restocked },
     });
+
+    /* Notify after the change has committed. A queue failure must not undo a
+       status the operator has already been told about. */
+    const trigger = STATUS_TRIGGER[result.to];
+    if (trigger) {
+      await enqueue({
+        type: JOB.whatsappSend,
+        payload: { trigger, orderId },
+        idempotencyKey: `wa:${trigger}:${orderId}`,
+      });
+    }
 
     refreshOrder(orderId);
     if (result.restocked) revalidateCatalog();

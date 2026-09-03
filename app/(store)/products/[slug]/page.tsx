@@ -5,6 +5,7 @@ import { getActiveProducts, getProductBySlug, getProductsByFamily } from "@/lib/
 import { FAMILIES } from "@/lib/catalog";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { PurchasePanel } from "@/components/product/PurchasePanel";
+import { TrackEvent } from "@/components/analytics/TrackEvent";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Accordion } from "@/components/ui/Accordion";
 import { breadcrumbJsonLd, jsonLdString, productJsonLd } from "@/lib/jsonld";
@@ -116,6 +117,16 @@ export default async function ProductPage({ params }: Props) {
         </nav>
 
         <div className="mt-6 grid gap-8 md:grid-cols-2 md:gap-12">
+          <TrackEvent
+            event="view_item"
+            valuePaisa={product.variants[0]?.pricePaisa ?? 0}
+            items={product.variants.slice(0, 1).map((v) => ({
+              sku: v.sku,
+              name: `${product.name} ${v.label}`,
+              quantity: 1,
+              pricePaisa: v.pricePaisa,
+            }))}
+          />
           <ProductGallery images={product.images} name={product.name} />
 
           <div>
