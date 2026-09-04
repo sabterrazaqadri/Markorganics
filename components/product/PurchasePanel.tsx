@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/Toast";
 import { formatPKR } from "@/lib/money";
 import { MAX_QTY_PER_LINE } from "@/config/commerce";
 import { QuantityStepper } from "@/components/cart/QuantityStepper";
+import { clientEventId, trackEvent } from "@/lib/analytics/client";
 import type { Family } from "@/lib/catalog";
 
 export interface PanelVariant {
@@ -77,6 +78,12 @@ export function PurchasePanel({ product, variants }: Props) {
       qty,
     );
     show("Added");
+    trackEvent({
+      event: "add_to_cart",
+      eventId: clientEventId("add_to_cart", `${selected.sku}:${Date.now()}`),
+      valuePaisa: selected.pricePaisa * qty,
+      items: [{ sku: selected.sku, name: `${product.name} ${selected.label}`, quantity: qty, pricePaisa: selected.pricePaisa }],
+    });
   }
 
   const priceBlock = selected ? (

@@ -43,7 +43,8 @@ export interface CaptureInput {
  * usable phone number is typed, and updated as the form fills in — for a COD
  * store this list is the single most valuable thing in the back office.
  */
-export async function captureCheckout(input: CaptureInput): Promise<void> {
+/** Returns the row id so the caller can schedule (or reschedule) a follow-up. */
+export async function captureCheckout(input: CaptureInput): Promise<string | null> {
   const itemCount = input.cart.reduce((n, l) => n + l.quantity, 0);
   const subtotal = input.cart.reduce((n, l) => n + l.unitPricePaisa * l.quantity, 0);
 
@@ -60,7 +61,7 @@ export async function captureCheckout(input: CaptureInput): Promise<void> {
     updatedAt: new Date(),
   };
 
-  await db
+  const rows = await db
     .insert(abandonedCheckouts)
     .values(values)
     .onConflictDoUpdate({
@@ -68,7 +69,9 @@ export async function captureCheckout(input: CaptureInput): Promise<void> {
       // Never resurrect a checkout that already turned into an order.
       set: values,
       setWhere: eq(abandonedCheckouts.status, "open"),
-    });
+    })
+    .returning({ id: abandonedCheckouts.id });
+  return rows[0]?.id ?? null;
 }
 
 /** Marks the checkout recovered once the matching order lands. */

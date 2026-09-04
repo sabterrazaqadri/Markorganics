@@ -11,6 +11,8 @@ import {
 } from "@/lib/admin/customers";
 import { formatPKR } from "@/lib/money";
 import { displayPkPhone, waNumber } from "@/lib/phone";
+import { markThreadRead, recentMessagesFor } from "@/lib/whatsapp/client";
+import { WhatsappThread } from "@/components/admin/WhatsappThread";
 import { Card, DateCell, EmptyState, OrderStatusPill, PageHeader, StatTile } from "@/components/admin/ui";
 import { CustomerEditor } from "@/components/admin/CustomerEditor";
 
@@ -27,7 +29,17 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const customer = await getCustomerById(id);
   if (!customer) notFound();
 
-  const [orders, addresses] = await Promise.all([getCustomerOrders(id), getCustomerAddresses(id)]);
+  const [orders, addresses, messages] = await Promise.all([
+    getCustomerOrders(id),
+    getCustomerAddresses(id),
+    recentMessagesFor(customer.phone),
+  ]);
+
+  // Opening the profile is what "reading" a WhatsApp reply means here, so the
+  // unread badge clears from the moment somebody actually looks.
+  if (messages.some((m) => m.direction === "inbound" && !m.isRead)) {
+    await markThreadRead(customer.phone);
+  }
   const risk = assessRisk(customer);
   const rate = deliveryRate(customer);
 
@@ -154,18 +166,34 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
           </Card>
         </div>
 
-        <CustomerEditor
-          customer={{
-            id: customer.id,
-            name: customer.name,
-            email: customer.email ?? "",
-            city: customer.city,
-            tags: customer.tags,
-            internalNote: customer.internalNote,
-            phone: customer.phone,
-          }}
-          canWrite={can(ctx.user.role, "customers:write")}
-        />
+        <div className="space-y-3">
+          <WhatsappThread
+            phone={customer.phone}
+            messages={messages.map((m) => ({
+              id: m.id,
+              direction: m.direction,
+              body: m.body,
+              templateName: m.templateName,
+              status: m.status,
+              error: m.error,
+              dryRun: m.dryRun,
+              isRead: m.isRead,
+              createdAt: m.createdAt.toISOString(),
+            }))}
+          />
+          <CustomerEditor
+            customer={{
+              id: customer.id,
+              name: customer.name,
+              email: customer.email ?? "",
+              city: customer.city,
+              tags: customer.tags,
+              internalNote: customer.internalNote,
+              phone: customer.phone,
+            }}
+            canWrite={can(ctx.user.role, "customers:write")}
+          />
+        </div>
       </div>
     </>
   );

@@ -22,6 +22,9 @@ import { refreshCustomerStats, upsertCustomer } from "@/lib/admin/customers";
 import { adjustStock } from "@/lib/admin/inventory";
 import { captureCheckout, markRecovered, type AbandonedCartLine } from "@/lib/admin/abandoned";
 import { ANALYTICS_TAG } from "@/lib/admin/analytics";
+import { cancelQueued, enqueue } from "@/lib/jobs/queue";
+import { JOB } from "@/lib/jobs/types";
+import { getIntegrationSettings } from "@/lib/settings";
 
 export type PlaceOrderResult =
   | { ok: true; orderNumber: string }
@@ -203,7 +206,7 @@ export async function recordCheckoutAttempt(input: {
   if (cart.length === 0) return;
 
   try {
-    await captureCheckout({
+    const abandonedId = await captureCheckout({
       sessionKey: input.sessionKey,
       name: input.name,
       phone: input.phone,
@@ -211,6 +214,21 @@ export async function recordCheckoutAttempt(input: {
       address: input.address,
       cart,
     });
+
+    /* Schedule the WhatsApp follow-up from the moment they last touched the
+       form, not from the first keystroke: drop any pending job and queue a
+       fresh one. If they finish the order, placeOrder deletes it again. */
+    if (abandonedId) {
+      const key = `wa:abandoned:${input.sessionKey}`;
+      const { abandonedDelayHours } = await getIntegrationSettings();
+      await cancelQueued(key);
+      await enqueue({
+        type: JOB.whatsappAbandoned,
+        payload: { abandonedId, sessionKey: input.sessionKey },
+        idempotencyKey: key,
+        runAfter: new Date(Date.now() + Math.max(1, abandonedDelayHours) * 3600_000),
+      });
+    }
   } catch (err) {
     // Never let telemetry break a checkout in progress.
     console.error("recordCheckoutAttempt failed", err);
@@ -253,7 +271,7 @@ export async function placeOrder(raw: CheckoutInput): Promise<PlaceOrderResult> 
   const variantIds = [...wanted.keys()];
 
   try {
-    const orderNumber = await db.transaction(async (tx) => {
+    const placed = await db.transaction(async (tx) => {
       const rows = await tx
         .select({
           id: productVariants.id,
@@ -422,7 +440,7 @@ export async function placeOrder(raw: CheckoutInput): Promise<PlaceOrderResult> 
       await refreshCustomerStats(tx, customerId);
       if (data.sessionKey) await markRecovered(tx, data.sessionKey, order.id, data.phone);
 
-      return number;
+      return { id: order.id, number };
     });
 
     // Stock and reports changed: refresh every cached surface.
@@ -431,9 +449,29 @@ export async function placeOrder(raw: CheckoutInput): Promise<PlaceOrderResult> 
     revalidatePath("/products/[slug]", "page");
     revalidatePath("/feed/meta");
     revalidatePath("/feed/google");
+    revalidatePath("/feed/tiktok");
     revalidateTag(ANALYTICS_TAG);
 
-    return { ok: true, orderNumber };
+    /* Integrations run after the order is safely committed, never inside the
+       transaction. Every call is wrapped: a dead queue, a missing table or a
+       provider outage must not turn a placed order into a failed one. */
+    try {
+      if (data.sessionKey) await cancelQueued(`wa:abandoned:${data.sessionKey}`);
+      await enqueue({
+        type: JOB.analyticsPurchase,
+        payload: { orderId: placed.id },
+        idempotencyKey: `purchase:${placed.id}`,
+      });
+      await enqueue({
+        type: JOB.whatsappSend,
+        payload: { trigger: "order_placed", orderId: placed.id },
+        idempotencyKey: `wa:order_placed:${placed.id}`,
+      });
+    } catch (err) {
+      console.error("post-order integrations could not be queued", err);
+    }
+
+    return { ok: true, orderNumber: placed.number };
   } catch (err) {
     if (err instanceof StockError) {
       return { ok: false, message: err.message, removeVariantIds: err.variantId ? [err.variantId] : undefined };

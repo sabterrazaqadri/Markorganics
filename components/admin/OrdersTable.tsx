@@ -9,19 +9,57 @@ import { formatPKR } from "@/lib/money";
 import { DateCell, ORDER_STATUS_LABEL, OrderStatusPill } from "./ui";
 import { ConfirmButton, ErrorNote, Modal, useAction, useRowSelection } from "./client-ui";
 import { bulkOrderAction } from "@/app/admin/(panel)/orders/actions";
+import { bulkBookAction } from "@/app/admin/(panel)/orders/courier-actions";
 
-export function OrdersTable({ rows, canWrite }: { rows: OrderRow[]; canWrite: boolean }) {
+export interface CourierChoice {
+  id: string;
+  name: string;
+  verified: boolean;
+}
+
+export function OrdersTable({
+  rows,
+  canWrite,
+  couriers = [],
+  defaultCourier = "",
+}: {
+  rows: OrderRow[];
+  canWrite: boolean;
+  couriers?: CourierChoice[];
+  defaultCourier?: string;
+}) {
   const ids = useMemo(() => rows.map((r) => r.id), [rows]);
   const selection = useRowSelection(ids);
-  const { pending, error, runAction } = useAction();
-  const [modal, setModal] = useState<null | "status" | "tag" | "untag">(null);
+  const { pending, error, runAction, show } = useAction();
+  const [modal, setModal] = useState<null | "status" | "tag" | "untag" | "book">(null);
   const [status, setStatus] = useState<OrderStatus>("confirmed");
   const [tag, setTag] = useState("");
   const [note, setNote] = useState("");
+  const [provider, setProvider] = useState(defaultCourier || couriers[0]?.id || "");
+  const [pickup, setPickup] = useState("");
+
+  /* Bulk booking is queued rather than run inline: forty courier calls in one
+     request is how a page times out halfway with nobody sure what got booked. */
+  function submitBooking() {
+    runAction(
+      () => bulkBookAction({ ids: selection.ids, provider, pickupAddressCode: pickup || undefined }),
+      {
+        onDone: (data) => {
+          setModal(null);
+          selection.clear();
+          show(
+            data.unmappedCities.length
+              ? `${data.queued} queued. Watch out: ${data.unmappedCities.slice(0, 4).join(", ")} ${data.unmappedCities.length > 4 ? "and others are" : "are"} not mapped for this courier.`
+              : `${data.queued} booking${data.queued === 1 ? "" : "s"} queued. Track them on the jobs page.`,
+          );
+        },
+      },
+    );
+  }
 
   function submit() {
     const action = modal;
-    if (!action) return;
+    if (!action || action === "book") return;
     runAction(
       () =>
         bulkOrderAction({
@@ -56,6 +94,11 @@ export function OrdersTable({ rows, canWrite }: { rows: OrderRow[]; canWrite: bo
           <button type="button" className="a-btn a-btn-xs" onClick={() => setModal("status")}>
             Change status
           </button>
+          {couriers.length ? (
+            <button type="button" className="a-btn a-btn-xs" onClick={() => setModal("book")}>
+              Book with courier
+            </button>
+          ) : null}
           <button type="button" className="a-btn a-btn-xs" onClick={() => setModal("tag")}>
             Add tag
           </button>
@@ -174,11 +217,47 @@ export function OrdersTable({ rows, canWrite }: { rows: OrderRow[]; canWrite: bo
       <Modal
         open={modal !== null}
         onClose={() => setModal(null)}
-        title={modal === "status" ? "Change status" : modal === "tag" ? "Add a tag" : "Remove a tag"}
+        title={
+          modal === "status"
+            ? "Change status"
+            : modal === "book"
+              ? "Book with a courier"
+              : modal === "tag"
+                ? "Add a tag"
+                : "Remove a tag"
+        }
       >
         <ErrorNote message={error} />
         <p className="mb-2 text-[12px] text-[var(--a-soft)]">Applies to {selection.count} selected orders.</p>
-        {modal === "status" ? (
+        {modal === "book" ? (
+          <>
+            <label htmlFor="bulk-courier" className="a-label">
+              Courier
+            </label>
+            <select id="bulk-courier" className="a-select" value={provider} onChange={(e) => setProvider(e.target.value)}>
+              {couriers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.verified ? "" : " (unverified)"}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="bulk-pickup" className="a-label mt-2">
+              Pickup address code (optional)
+            </label>
+            <input
+              id="bulk-pickup"
+              className="a-input"
+              value={pickup}
+              onChange={(e) => setPickup(e.target.value)}
+              placeholder="Leave blank to use the courier default"
+            />
+            <p className="a-hint">
+              Each booking runs as its own job, so one refusal does not stop the rest. Cities without a mapping are
+              reported back before anything is sent.
+            </p>
+          </>
+        ) : modal === "status" ? (
           <>
             <label htmlFor="bulk-status" className="a-label">
               New status
@@ -210,7 +289,11 @@ export function OrdersTable({ rows, canWrite }: { rows: OrderRow[]; canWrite: bo
           <button type="button" className="a-btn" onClick={() => setModal(null)}>
             Cancel
           </button>
-          {modal === "status" && (status === "cancelled" || status === "returned") ? (
+          {modal === "book" ? (
+            <button type="button" className="a-btn a-btn-primary" onClick={submitBooking} disabled={pending || !provider}>
+              {pending ? "Queueing…" : `Queue ${selection.count} booking${selection.count === 1 ? "" : "s"}`}
+            </button>
+          ) : modal === "status" && (status === "cancelled" || status === "returned") ? (
             <ConfirmButton
               className="a-btn a-btn-primary"
               confirmLabel={`Yes, ${ORDER_STATUS_LABEL[status].toLowerCase()} ${selection.count}`}

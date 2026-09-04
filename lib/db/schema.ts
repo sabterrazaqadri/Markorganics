@@ -865,3 +865,324 @@ export type MetafieldDefinition = typeof metafieldDefinitions.$inferSelect;
 export type MetafieldValue = typeof metafieldValues.$inferSelect;
 export type NotificationTemplate = typeof notificationTemplates.$inferSelect;
 export type SavedView = typeof savedViews.$inferSelect;
+
+/* ============================================================================
+ * Integrations layer: job queue, courier, WhatsApp, and the outbound call log.
+ * Everything below is additive. Nothing above it depends on any of it, so an
+ * integration that is off (or broken) can never reach the order path.
+ * ==========================================================================*/
+
+export const jobStatusEnum = pgEnum("job_status", ["queued", "running", "succeeded", "failed", "dead"]);
+export const JOB_STATUSES = jobStatusEnum.enumValues;
+export type JobStatus = (typeof JOB_STATUSES)[number];
+
+export const integrationDirectionEnum = pgEnum("integration_direction", ["outbound", "inbound"]);
+export const waDirectionEnum = pgEnum("wa_direction", ["outbound", "inbound"]);
+export const waMessageStatusEnum = pgEnum("wa_message_status", [
+  "queued",
+  "sent",
+  "delivered",
+  "read",
+  "failed",
+  "skipped",
+  "received",
+]);
+
+/**
+ * Durable work queue. Every outbound side effect goes through here, so the
+ * order transaction commits before anything external is attempted and a
+ * failure retries instead of vanishing.
+ */
+export const jobs = pgTable(
+  "jobs",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    type: text("type").notNull(),
+    payload: jsonb("payload").notNull().default(sql`'{}'::jsonb`),
+    status: jobStatusEnum("status").notNull().default("queued"),
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    runAfter: timestamp("run_after", { withTimezone: true }).notNull().defaultNow(),
+    /** Unique per logical action, so a retry never books the same shipment twice. */
+    idempotencyKey: text("idempotency_key"),
+    lastError: text("last_error"),
+    result: jsonb("result"),
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+    lockedBy: text("locked_by"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex("jobs_idempotency_idx").on(t.idempotencyKey),
+    index("jobs_claim_idx").on(t.status, t.runAfter),
+    index("jobs_type_idx").on(t.type, t.createdAt),
+    index("jobs_status_created_idx").on(t.status, t.createdAt),
+  ],
+);
+
+/**
+ * One row per provider. Secrets live in `secrets` as AES-256-GCM envelopes and
+ * are never returned to the browser: the UI only ever sees the last 4 chars.
+ */
+export const integrations = pgTable("integrations", {
+  provider: text("provider").primaryKey(),
+  isEnabled: boolean("is_enabled").notNull().default(false),
+  /** Per-provider override. The global switch in settings wins when it is on. */
+  dryRun: boolean("dry_run").notNull().default(true),
+  /** Non-secret configuration: ids, toggles, defaults. Safe to render. */
+  config: jsonb("config").notNull().default(sql`'{}'::jsonb`),
+  /** { field: { cipher, iv, tag, last4 } }. Never selected into a client component. */
+  secrets: jsonb("secrets").notNull().default(sql`'{}'::jsonb`),
+  lastTestAt: timestamp("last_test_at", { withTimezone: true }),
+  lastTestOk: boolean("last_test_ok"),
+  lastTestMessage: text("last_test_message"),
+  /** Set by the call logger; drives the dashboard health strip. */
+  lastErrorAt: timestamp("last_error_at", { withTimezone: true }),
+  lastErrorMessage: text("last_error_message"),
+  lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+  ...timestamps,
+});
+
+/** Last-N call log per provider. Bodies are stored already redacted. */
+export const integrationEvents = pgTable(
+  "integration_events",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    provider: text("provider").notNull(),
+    direction: integrationDirectionEnum("direction").notNull().default("outbound"),
+    operation: text("operation").notNull().default(""),
+    method: text("method").notNull().default("GET"),
+    endpoint: text("endpoint").notNull().default(""),
+    requestBody: jsonb("request_body"),
+    requestHeaders: jsonb("request_headers"),
+    responseStatus: integer("response_status"),
+    responseBody: jsonb("response_body"),
+    ok: boolean("ok").notNull().default(false),
+    dryRun: boolean("dry_run").notNull().default(false),
+    durationMs: integer("duration_ms").notNull().default(0),
+    error: text("error"),
+    jobId: uuid("job_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("integration_events_provider_idx").on(t.provider, t.createdAt),
+    index("integration_events_created_idx").on(t.createdAt),
+    index("integration_events_ok_idx").on(t.ok, t.createdAt),
+  ],
+);
+
+/**
+ * MARK city to courier city id. Every courier names cities differently, and a
+ * wrong id is the single most common booking failure, so each row is confirmed
+ * by a human before it is used.
+ */
+export const courierCities = pgTable(
+  "courier_cities",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    provider: text("provider").notNull(),
+    markCity: text("mark_city").notNull(),
+    courierCityId: text("courier_city_id").notNull(),
+    courierCityName: text("courier_city_name").notNull().default(""),
+    confirmedById: uuid("confirmed_by_id").references(() => users.id, { onDelete: "set null" }),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex("courier_cities_pair_idx").on(t.provider, t.markCity),
+    index("courier_cities_provider_idx").on(t.provider),
+  ],
+);
+
+export const shipments = pgTable(
+  "shipments",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    trackingNumber: text("tracking_number").notNull(),
+    /** MARK's own vocabulary. See lib/courier/status.ts. */
+    status: text("status").notNull().default("booked"),
+    /** Exactly what the courier said, kept so a mapping bug stays recoverable. */
+    rawStatus: text("raw_status").notNull().default(""),
+    labelUrl: text("label_url"),
+    pickupAddressCode: text("pickup_address_code").notNull().default(""),
+    courierCityId: text("courier_city_id").notNull().default(""),
+    codAmountPaisa: integer("cod_amount_paisa").notNull().default(0),
+    /** What the courier actually remitted, filled in during reconciliation. */
+    remittedPaisa: integer("remitted_paisa").notNull().default(0),
+    remittanceId: uuid("remittance_id"),
+    bookedById: uuid("booked_by_id").references(() => users.id, { onDelete: "set null" }),
+    bookedAt: timestamp("booked_at", { withTimezone: true }).notNull().defaultNow(),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    returnedAt: timestamp("returned_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    meta: jsonb("meta").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex("shipments_tracking_idx").on(t.provider, t.trackingNumber),
+    index("shipments_order_idx").on(t.orderId),
+    index("shipments_status_idx").on(t.status, t.lastSyncAt),
+    index("shipments_provider_idx").on(t.provider, t.bookedAt),
+    index("shipments_delivered_idx").on(t.deliveredAt),
+  ],
+);
+
+export const shipmentEvents = pgTable(
+  "shipment_events",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    shipmentId: uuid("shipment_id")
+      .notNull()
+      .references(() => shipments.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("unknown"),
+    rawStatus: text("raw_status").notNull().default(""),
+    message: text("message").notNull().default(""),
+    location: text("location").notNull().default(""),
+    /** "poll" | "webhook" | "manual" */
+    source: text("source").notNull().default("poll"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+    raw: jsonb("raw"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("shipment_events_dedupe_idx").on(t.shipmentId, t.rawStatus, t.occurredAt),
+    index("shipment_events_shipment_idx").on(t.shipmentId, t.occurredAt),
+  ],
+);
+
+/** What a courier actually paid out, against what it collected. */
+export const codRemittances = pgTable(
+  "cod_remittances",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    provider: text("provider").notNull(),
+    reference: text("reference").notNull().default(""),
+    paidOn: timestamp("paid_on", { withTimezone: true }).notNull().defaultNow(),
+    amountPaisa: integer("amount_paisa").notNull().default(0),
+    /** Sum of the attached lines; a gap against amountPaisa is a red flag. */
+    allocatedPaisa: integer("allocated_paisa").notNull().default(0),
+    note: text("note").notNull().default(""),
+    createdById: uuid("created_by_id").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (t) => [index("cod_remittances_provider_idx").on(t.provider, t.paidOn)],
+);
+
+export const codRemittanceLines = pgTable(
+  "cod_remittance_lines",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    remittanceId: uuid("remittance_id")
+      .notNull()
+      .references(() => codRemittances.id, { onDelete: "cascade" }),
+    shipmentId: uuid("shipment_id").references(() => shipments.id, { onDelete: "set null" }),
+    orderId: uuid("order_id").references(() => orders.id, { onDelete: "set null" }),
+    trackingNumber: text("tracking_number").notNull().default(""),
+    expectedPaisa: integer("expected_paisa").notNull().default(0),
+    paidPaisa: integer("paid_paisa").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("cod_remittance_lines_pair_idx").on(t.remittanceId, t.trackingNumber),
+    index("cod_remittance_lines_shipment_idx").on(t.shipmentId),
+  ],
+);
+
+/**
+ * Mirrors the templates approved in Meta's Business Manager. Authoring and
+ * approval happen there; this table only tells the app what it may send.
+ */
+export const whatsappTemplates = pgTable(
+  "whatsapp_templates",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    name: text("name").notNull(),
+    language: text("language").notNull().default("en"),
+    /** Meta's billing category: utility | marketing | authentication | service */
+    category: text("category").notNull().default("utility"),
+    body: text("body").notNull().default(""),
+    /** Ordered variable names for {{1}}, {{2}}, ... */
+    variables: text("variables").array().notNull().default(sql`'{}'::text[]`),
+    /** approved | pending | rejected | local */
+    approvalStatus: text("approval_status").notNull().default("local"),
+    /** Which lifecycle trigger sends this, or null for manual only. */
+    trigger: text("trigger"),
+    isEnabled: boolean("is_enabled").notNull().default(false),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex("whatsapp_templates_name_idx").on(t.name, t.language),
+    index("whatsapp_templates_trigger_idx").on(t.trigger),
+  ],
+);
+
+/** Every send and every inbound message. Drives the monthly cost estimate. */
+export const whatsappMessages = pgTable(
+  "whatsapp_messages",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    direction: waDirectionEnum("direction").notNull().default("outbound"),
+    phone: text("phone").notNull(),
+    customerId: uuid("customer_id").references(() => customers.id, { onDelete: "set null" }),
+    orderId: uuid("order_id").references(() => orders.id, { onDelete: "set null" }),
+    templateName: text("template_name").notNull().default(""),
+    category: text("category").notNull().default("utility"),
+    trigger: text("trigger").notNull().default(""),
+    body: text("body").notNull().default(""),
+    /** Meta's message id, used to reconcile status webhooks. */
+    wamid: text("wamid"),
+    status: waMessageStatusEnum("status").notNull().default("queued"),
+    error: text("error"),
+    /** Meta bills per conversation, not per message; this flags the billable ones. */
+    billable: boolean("billable").notNull().default(true),
+    isRead: boolean("is_read").notNull().default(false),
+    dryRun: boolean("dry_run").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("whatsapp_messages_phone_idx").on(t.phone, t.createdAt),
+    index("whatsapp_messages_customer_idx").on(t.customerId, t.createdAt),
+    index("whatsapp_messages_order_idx").on(t.orderId),
+    index("whatsapp_messages_unread_idx").on(t.direction, t.isRead),
+    index("whatsapp_messages_cost_idx").on(t.direction, t.category, t.createdAt),
+    uniqueIndex("whatsapp_messages_wamid_idx").on(t.wamid),
+  ],
+);
+
+/* ------------------------------------------- integration relations & types */
+
+export const shipmentsRelations = relations(shipments, ({ one, many }) => ({
+  order: one(orders, { fields: [shipments.orderId], references: [orders.id] }),
+  events: many(shipmentEvents),
+}));
+export const shipmentEventsRelations = relations(shipmentEvents, ({ one }) => ({
+  shipment: one(shipments, { fields: [shipmentEvents.shipmentId], references: [shipments.id] }),
+}));
+export const codRemittancesRelations = relations(codRemittances, ({ many }) => ({
+  lines: many(codRemittanceLines),
+}));
+export const codRemittanceLinesRelations = relations(codRemittanceLines, ({ one }) => ({
+  remittance: one(codRemittances, {
+    fields: [codRemittanceLines.remittanceId],
+    references: [codRemittances.id],
+  }),
+  shipment: one(shipments, { fields: [codRemittanceLines.shipmentId], references: [shipments.id] }),
+}));
+
+export type Job = typeof jobs.$inferSelect;
+export type Integration = typeof integrations.$inferSelect;
+export type IntegrationEvent = typeof integrationEvents.$inferSelect;
+export type CourierCity = typeof courierCities.$inferSelect;
+export type Shipment = typeof shipments.$inferSelect;
+export type ShipmentEvent = typeof shipmentEvents.$inferSelect;
+export type CodRemittance = typeof codRemittances.$inferSelect;
+export type CodRemittanceLine = typeof codRemittanceLines.$inferSelect;
+export type WhatsappTemplate = typeof whatsappTemplates.$inferSelect;
+export type WhatsappMessage = typeof whatsappMessages.$inferSelect;

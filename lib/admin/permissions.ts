@@ -34,6 +34,11 @@ export const PERMISSIONS = [
   "staff:read",
   "staff:write",
   "activity:read",
+  // Owner only: credentials, dry-run switches and the job queue.
+  "integrations:read",
+  "integrations:write",
+  "jobs:read",
+  "jobs:write",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
