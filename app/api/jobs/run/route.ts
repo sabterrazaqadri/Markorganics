@@ -3,7 +3,8 @@ import { authorizeRunner } from "@/lib/jobs/auth";
 import { runJobs } from "@/lib/jobs/run";
 
 /**
- * The worker. Triggered by a Vercel cron every minute (see vercel.json), and
+ * The worker. Kicked after every enqueue (see lib/jobs/queue.ts), swept by a
+ * daily Vercel cron for retries and delayed jobs (see vercel.json), and
  * callable by hand with:
  *
  *   curl -H "x-jobs-secret: $JOBS_RUNNER_SECRET" https://<host>/api/jobs/run

@@ -4,7 +4,7 @@ import { enqueue } from "@/lib/jobs/queue";
 import { JOB } from "@/lib/jobs/types";
 
 /**
- * Every 30 minutes: queue one fan-out job that in turn queues a sync per
+ * Daily (Hobby-plan cron limit): queue one fan-out job that in turn queues a sync per
  * in-transit shipment.
  *
  * The cron does not poll couriers itself — it only enqueues — so a courier

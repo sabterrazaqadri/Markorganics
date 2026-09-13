@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import { and, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { db, type Db } from "@/lib/db";
 import { jobs, type Job, type JobStatus } from "@/lib/db/schema";
@@ -53,10 +54,32 @@ export async function enqueue(input: EnqueueInput, tx: Tx = db): Promise<string 
       })
       .onConflictDoNothing({ target: jobs.idempotencyKey })
       .returning({ id: jobs.id });
-    return rows[0]?.id ?? null;
+    const id = rows[0]?.id ?? null;
+    if (id && !(input.runAfter && input.runAfter.getTime() > Date.now())) kickRunner();
+    return id;
   } catch (err) {
     console.error(`enqueue(${input.type}) failed`, err);
     return null;
+  }
+}
+
+/**
+ * Runs the worker once the current response has been sent, so a job queued
+ * by a checkout or an admin action goes out within seconds instead of
+ * waiting for the cron. The cron still exists for retries and delayed jobs;
+ * on Vercel's Hobby plan it can only fire daily, which is why this matters.
+ *
+ * Outside a request scope (scripts, tests) `after` throws — that is fine,
+ * the cron picks the job up.
+ */
+function kickRunner(): void {
+  try {
+    after(async () => {
+      const { runJobs } = await import("./run");
+      await runJobs(5).catch((err) => console.error("post-enqueue run failed", err));
+    });
+  } catch {
+    // no request scope
   }
 }
 
