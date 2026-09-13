@@ -7,7 +7,7 @@ import { orders } from "@/lib/db/schema";
 import { getShipmentByTracking, shipmentTimeline } from "@/lib/courier/shipments";
 import { courierName } from "@/lib/courier";
 import { SHIPMENT_STATUS_PUBLIC, isTerminal, type ShipmentStatus } from "@/lib/courier/status";
-import { WHATSAPP_NUMBER } from "@/config/commerce";
+import { WhatsAppLink } from "@/components/analytics/WhatsAppLink";
 
 /**
  * MARK's own tracking page.
@@ -56,7 +56,6 @@ export default async function TrackShipmentPage({ params }: { params: Promise<{ 
 
   const status = shipment.status as ShipmentStatus;
   const done = isTerminal(status);
-  const waText = encodeURIComponent(`Hello, I am asking about parcel ${shipment.trackingNumber}.`);
 
   return (
     <div className="container-x py-8 md:py-12">
@@ -107,9 +106,9 @@ export default async function TrackShipmentPage({ params }: { params: Promise<{ 
       ) : null}
 
       <div className="mt-8 flex flex-wrap gap-3">
-        <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waText}`} className="btn btn-secondary" rel="noopener">
+        <WhatsAppLink text={`Hello, I am asking about parcel ${shipment.trackingNumber}.`} className="btn btn-secondary">
           Ask on WhatsApp
-        </a>
+        </WhatsAppLink>
         <Link href="/track" className="btn btn-secondary">
           Track a different order
         </Link>

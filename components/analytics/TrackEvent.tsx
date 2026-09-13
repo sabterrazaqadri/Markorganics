@@ -13,7 +13,10 @@ import type { EcommerceEvent } from "@/lib/analytics/events";
  * counting the same view twice.
  *
  * `eventId` is required for `purchase` and must be the id the server
- * computed, or the platform will count the sale twice.
+ * computed, or the platform will count the sale twice. Purchase is also
+ * remembered in sessionStorage: Meta deduplicates on event id anyway, but a
+ * refreshed thank-you page should not send the same sale a third time for
+ * the platforms that do not.
  */
 export function TrackEvent({
   event,
@@ -33,14 +36,25 @@ export function TrackEvent({
   useEffect(() => {
     if (fired.current) return;
     fired.current = true;
-    trackEvent({
-      event,
-      eventId: eventId ?? clientEventId(event, orderNumber ?? items.map((i) => i.sku).join("|")),
-      valuePaisa,
-      items,
-      orderNumber,
-    });
+
+    const id = eventId ?? clientEventId(event, orderNumber ?? items.map((i) => i.sku).join("|"));
+    if (event === "purchase" && alreadySent(id)) return;
+
+    trackEvent({ event, eventId: id, valuePaisa, items, orderNumber });
   }, [event, eventId, valuePaisa, items, orderNumber]);
 
   return null;
+}
+
+const SENT_KEY = "mark_purchase_sent";
+
+/** True if this tab has already reported the purchase; marks it otherwise. */
+function alreadySent(eventId: string): boolean {
+  try {
+    if (window.sessionStorage.getItem(SENT_KEY) === eventId) return true;
+    window.sessionStorage.setItem(SENT_KEY, eventId);
+  } catch {
+    // Storage blocked: fall back to the event-id deduplication upstream.
+  }
+  return false;
 }

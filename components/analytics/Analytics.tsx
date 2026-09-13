@@ -1,7 +1,8 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { CONSENT_EVENT, readConsent, writeConsent, type ConsentValue } from "@/lib/analytics/client";
 
 /**
@@ -14,6 +15,11 @@ import { CONSENT_EVENT, readConsent, writeConsent, type ConsentValue } from "@/l
  * Server-side events are unaffected. A customer's own purchase is reported
  * from the job runner whatever the banner says, because that is the shop's
  * record of its own sale, not third-party tracking of a stranger.
+ *
+ * The init snippets fire the first PageView themselves. Every navigation
+ * after that is client-side and never reloads the snippet, so
+ * <RouteChangeTracker> fires the follow-up page views — the most common
+ * hole in a Next.js pixel install.
  */
 
 export interface AnalyticsIds {
@@ -57,6 +63,14 @@ export function Analytics({ ids, requireConsent }: { ids: AnalyticsIds; requireC
         </>
       ) : null}
 
+      {allowed && (ids.metaPixelId || ids.tiktokPixelCode) ? (
+        // useSearchParams needs a Suspense boundary or the whole layout
+        // opts into client rendering.
+        <Suspense fallback={null}>
+          <RouteChangeTracker />
+        </Suspense>
+      ) : null}
+
       {allowed && ids.tiktokPixelCode ? (
         <Script id="tiktok-pixel" strategy="afterInteractive">
           {`!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];ttq.setAndDefer=function(e,n){e[n]=function(){e.push([n].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(e){for(var n=ttq._i[e]||[],i=0;i<ttq.methods.length;i++)ttq.setAndDefer(n,ttq.methods[i]);return n};ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=d.createElement("script");o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;var a=d.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};ttq.load('${ids.tiktokPixelCode}');ttq.page()}(window,document,'ttq');`}
@@ -68,6 +82,69 @@ export function Analytics({ ids, requireConsent }: { ids: AnalyticsIds; requireC
       ) : null}
     </>
   );
+}
+
+interface PixelWindow extends Window {
+  fbq?: (...args: unknown[]) => void;
+  ttq?: { page?: () => void };
+}
+
+/**
+ * Fires PageView on every client-side navigation after the first paint, and
+ * records the click id Meta puts in the URL.
+ *
+ * The first page view is skipped here because the init snippet sends it, and
+ * the snippet may not have run yet when this effect first fires; a PageView
+ * sent to a pixel that has not been initialised is silently dropped.
+ */
+function RouteChangeTracker() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const last = useRef<string | null>(null);
+
+  useEffect(() => {
+    rememberClickId(searchParams.get("fbclid"));
+
+    const key = `${pathname}?${search}`;
+    if (last.current === null) {
+      last.current = key;
+      return;
+    }
+    if (last.current === key) return;
+    last.current = key;
+
+    const w = window as PixelWindow;
+    try {
+      w.fbq?.("track", "PageView");
+    } catch {
+      /* ignore */
+    }
+    try {
+      w.ttq?.page?.();
+    } catch {
+      /* ignore */
+    }
+  }, [pathname, search, searchParams]);
+
+  return null;
+}
+
+/**
+ * `_fbc` is how Meta ties a visit back to the ad that was clicked. The pixel
+ * sets it itself, but only once it has loaded — a visitor who lands and
+ * moves on quickly can lose it. Writing it here on arrival is cheap, and the
+ * Conversions API reads the cookie on every server event.
+ */
+function rememberClickId(fbclid: string | null) {
+  if (!fbclid || !/^[\w-]{1,255}$/.test(fbclid)) return;
+  try {
+    if (document.cookie.split("; ").some((c) => c.startsWith("_fbc="))) return;
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    document.cookie = `_fbc=fb.1.${Date.now()}.${fbclid}; path=/; max-age=7776000; samesite=lax${secure}`;
+  } catch {
+    /* cookies blocked: the pixel will try again on its own */
+  }
 }
 
 function ConsentBanner({ onChoose }: { onChoose: (value: "granted" | "denied") => void }) {

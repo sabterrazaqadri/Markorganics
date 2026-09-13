@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BRAND_NAME, SUPPORT_EMAIL, WHATSAPP_NUMBER } from "@/config/commerce";
+import { BRAND_NAME, SUPPORT_EMAIL } from "@/config/commerce";
+import { WhatsAppLink } from "@/components/analytics/WhatsAppLink";
 import { FAMILIES, FAMILY_ORDER } from "@/lib/catalog";
 import { getMenu } from "@/lib/content";
 import { Logo } from "./Logo";
@@ -95,9 +96,7 @@ export async function Footer() {
               </Link>
             </li>
             <li>
-              <a href={`https://wa.me/${WHATSAPP_NUMBER}`} className="hover:text-ink hover:underline underline-offset-4" rel="noopener">
-                WhatsApp us
-              </a>
+              <WhatsAppLink className="hover:text-ink hover:underline underline-offset-4">WhatsApp us</WhatsAppLink>
             </li>
             <li>
               <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-ink hover:underline underline-offset-4">

@@ -108,3 +108,27 @@ test("a three-word name uses the first and last parts", () => {
   assert.deepEqual(data.fn, [sha("muhammad")]);
   assert.deepEqual(data.ln, [sha("khan")]);
 });
+
+/* ------------------------------------------------------ event vocabulary */
+
+import { META_EVENT_NAME, TIKTOK_EVENT_NAME, TRACKED_EVENTS, isTrackedEvent } from "@/lib/analytics/events";
+
+test("every tracked event has a Meta and a TikTok name", () => {
+  // A missing entry would send `undefined` as the event name, which Meta
+  // accepts as a custom event and never optimises on.
+  for (const event of TRACKED_EVENTS) {
+    assert.equal(typeof META_EVENT_NAME[event], "string", `META_EVENT_NAME.${event}`);
+    assert.equal(typeof TIKTOK_EVENT_NAME[event], "string", `TIKTOK_EVENT_NAME.${event}`);
+  }
+  assert.equal(META_EVENT_NAME.contact, "Contact");
+  assert.equal(META_EVENT_NAME.purchase, "Purchase");
+});
+
+test("isTrackedEvent rejects anything the pixels do not know", () => {
+  assert.equal(isTrackedEvent("contact"), true);
+  assert.equal(isTrackedEvent("purchase"), true);
+  assert.equal(isTrackedEvent("PageView"), false);
+  assert.equal(isTrackedEvent("Purchase"), false);
+  assert.equal(isTrackedEvent(42), false);
+  assert.equal(isTrackedEvent(undefined), false);
+});

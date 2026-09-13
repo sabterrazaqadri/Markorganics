@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SUPPORT_EMAIL, WHATSAPP_NUMBER } from "@/config/commerce";
+import { WhatsAppLink } from "@/components/analytics/WhatsAppLink";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -18,9 +19,7 @@ export default function ContactPage() {
         <div className="card p-5">
           <h2 className="text-lg">WhatsApp</h2>
           <p className="mt-1 text-ink-soft">{display}</p>
-          <a href={`https://wa.me/${WHATSAPP_NUMBER}`} className="btn btn-band-care mt-4" rel="noopener">
-            Message on WhatsApp
-          </a>
+          <WhatsAppLink className="btn btn-band-care mt-4">Message on WhatsApp</WhatsAppLink>
         </div>
         <div className="card p-5">
           <h2 className="text-lg">Email</h2>

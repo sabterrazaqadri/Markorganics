@@ -6,7 +6,7 @@ import { normalizeOrderNumber } from "@/lib/order-number";
 import { OrderDetails } from "@/components/order/OrderDetails";
 import { TrackEvent } from "@/components/analytics/TrackEvent";
 import { eventIdFor } from "@/lib/analytics/event-id";
-import { WHATSAPP_NUMBER } from "@/config/commerce";
+import { WhatsAppLink } from "@/components/analytics/WhatsAppLink";
 import { getStoreSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,6 @@ export default async function OrderPage({ params }: Props) {
   if (!order) notFound();
 
   const justPlaced = Date.now() - order.createdAt.getTime() < 5 * 60 * 1000 && order.status === "pending";
-  const waText = encodeURIComponent(`Hello, I have a question about order ${order.orderNumber}.`);
 
   return (
     <div className="container-x py-8 md:py-12">
@@ -58,9 +57,9 @@ export default async function OrderPage({ params }: Props) {
       ) : null}
       <OrderDetails order={order} />
       <div className="mt-8 flex flex-wrap gap-3">
-        <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waText}`} className="btn btn-secondary" rel="noopener">
+        <WhatsAppLink text={`Hello, I have a question about order ${order.orderNumber}.`} className="btn btn-secondary">
           Ask on WhatsApp
-        </a>
+        </WhatsAppLink>
         <Link href="/products" className="btn btn-primary">
           Continue shopping
         </Link>

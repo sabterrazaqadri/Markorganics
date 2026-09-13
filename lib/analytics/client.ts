@@ -1,6 +1,6 @@
 "use client";
 
-import { ECOMMERCE_EVENTS, META_EVENT_NAME, TIKTOK_EVENT_NAME, type EcommerceEvent } from "./events";
+import { META_EVENT_NAME, TIKTOK_EVENT_NAME, isTrackedEvent, type TrackedEvent } from "./events";
 
 /**
  * The browser half of the three pixels.
@@ -11,6 +11,10 @@ import { ECOMMERCE_EVENTS, META_EVENT_NAME, TIKTOK_EVENT_NAME, type EcommerceEve
  *
  * `eventId` matters: the server sends the same id for the same event, and
  * that is the only thing stopping every purchase being counted twice.
+ *
+ * Every event except purchase is also posted to /api/meta-event so the
+ * Conversions API gets a copy the browser cannot block. Purchase is left to
+ * the job runner, which has the customer's details and sends a better one.
  */
 
 export const CONSENT_KEY = "mark_consent";
@@ -46,9 +50,10 @@ export interface ClientItem {
 }
 
 export interface ClientEvent {
-  event: EcommerceEvent;
+  event: TrackedEvent;
   eventId: string;
   valuePaisa: number;
+  /** Empty for `contact`. */
   items: ClientItem[];
   orderNumber?: string;
 }
@@ -65,11 +70,12 @@ function rupees(paisa: number): number {
 
 export function trackEvent(input: ClientEvent): void {
   if (typeof window === "undefined") return;
-  if (!ECOMMERCE_EVENTS.includes(input.event)) return;
+  if (!isTrackedEvent(input.event)) return;
   if (readConsent() !== "granted") return;
 
   const w = window as PixelWindow;
   const value = rupees(input.valuePaisa);
+  const hasItems = input.items.length > 0;
   const contents = input.items.map((i) => ({
     id: i.sku,
     quantity: i.quantity,
@@ -80,15 +86,17 @@ export function trackEvent(input: ClientEvent): void {
     w.fbq?.("track", META_EVENT_NAME[input.event], {
       currency: "PKR",
       value,
-      content_type: "product",
-      content_ids: input.items.map((i) => i.sku),
-      contents,
+      ...(hasItems
+        ? { content_type: "product", content_ids: input.items.map((i) => i.sku), contents }
+        : {}),
       ...(input.orderNumber ? { order_id: input.orderNumber } : {}),
       // The server sends this same id, and Meta keeps one of the pair.
     }, { eventID: input.eventId });
   } catch {
     /* a blocked pixel must never break a click handler */
   }
+
+  if (input.event !== "purchase") sendToConversionsApi(input);
 
   try {
     w.gtag?.("event", input.event, {
@@ -113,16 +121,46 @@ export function trackEvent(input: ClientEvent): void {
       {
         currency: "PKR",
         value,
-        contents: input.items.map((i) => ({
-          content_id: i.sku,
-          content_name: i.name,
-          content_type: "product",
-          quantity: i.quantity,
-          price: rupees(i.pricePaisa),
-        })),
+        ...(hasItems
+          ? {
+              contents: input.items.map((i) => ({
+                content_id: i.sku,
+                content_name: i.name,
+                content_type: "product",
+                quantity: i.quantity,
+                price: rupees(i.pricePaisa),
+              })),
+            }
+          : {}),
       },
       { event_id: input.eventId },
     );
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * The server copy of a browser event. `keepalive` is what lets the request
+ * finish after the page it was sent from is gone — a Contact click navigates
+ * to wa.me immediately, and without it the event would be aborted.
+ */
+function sendToConversionsApi(input: ClientEvent): void {
+  try {
+    void fetch("/api/meta-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        event: input.event,
+        eventId: input.eventId,
+        valuePaisa: input.valuePaisa,
+        items: input.items,
+        sourceUrl: window.location.href,
+      }),
+    }).catch(() => {
+      /* the browser pixel has already fired; nothing to do */
+    });
   } catch {
     /* ignore */
   }

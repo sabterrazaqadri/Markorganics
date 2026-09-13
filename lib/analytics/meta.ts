@@ -7,10 +7,13 @@ import { META_EVENT_NAME, rupees, type CommerceEventPayload } from "./events";
 /**
  * Meta Conversions API.
  *
- * Sends the same four events the browser pixel sends, with the same
- * `event_id`, so Events Manager keeps exactly one of each pair. Personal data
- * is hashed in lib/analytics/hash.ts before it gets here — nothing in this
- * file ever sees a raw phone number leave the process unhashed.
+ * Sends the same events the browser pixel sends, with the same `event_id`,
+ * so Events Manager keeps exactly one of each pair. Purchase arrives from the
+ * job runner with the customer's details; the browser-only events (view,
+ * add to cart, checkout, contact) arrive via /api/meta-event with whatever
+ * the request carries. Personal data is hashed in lib/analytics/hash.ts
+ * before it gets here — nothing in this file ever sees a raw phone number
+ * leave the process unhashed.
  */
 
 const GRAPH = "https://graph.facebook.com";
@@ -23,6 +26,31 @@ export interface CapiInput extends CommerceEventPayload {
   /** Meta's browser cookies, when the request has them. */
   fbp?: string | null;
   fbc?: string | null;
+}
+
+/**
+ * `value` and `currency` always go, as numbers: without them Meta cannot
+ * compute ROAS or optimise on value. Product fields only go when there are
+ * products — a Contact click has none, and an empty `contents` array is
+ * flagged in Events Manager as a malformed catalogue match.
+ */
+function customData(input: CapiInput): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    currency: input.currency,
+    value: rupees(input.valuePaisa),
+  };
+  if (input.orderNumber) out.order_id = input.orderNumber;
+  if (input.items.length > 0) {
+    out.num_items = input.items.reduce((n, i) => n + i.quantity, 0);
+    out.content_type = "product";
+    out.content_ids = input.items.map((i) => i.sku);
+    out.contents = input.items.map((i) => ({
+      id: i.sku,
+      quantity: i.quantity,
+      item_price: rupees(i.pricePaisa),
+    }));
+  }
+  return out;
 }
 
 export async function sendMetaEvent(input: CapiInput): Promise<{ ok: boolean; message: string; dryRun: boolean }> {
@@ -48,19 +76,7 @@ export async function sendMetaEvent(input: CapiInput): Promise<{ ok: boolean; me
         action_source: "website",
         event_source_url: input.sourceUrl,
         user_data: userData,
-        custom_data: {
-          currency: input.currency,
-          value: rupees(input.valuePaisa),
-          order_id: input.orderNumber,
-          num_items: input.items.reduce((n, i) => n + i.quantity, 0),
-          content_type: "product",
-          contents: input.items.map((i) => ({
-            id: i.sku,
-            quantity: i.quantity,
-            item_price: rupees(i.pricePaisa),
-          })),
-          content_ids: input.items.map((i) => i.sku),
-        },
+        custom_data: customData(input),
       },
     ],
     ...(creds.values.testEventCode ? { test_event_code: creds.values.testEventCode } : {}),
