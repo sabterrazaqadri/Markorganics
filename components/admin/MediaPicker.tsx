@@ -1,23 +1,48 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { MediaFile } from "@/lib/db/schema";
-import { Modal } from "./client-ui";
+import { ErrorNote, Modal } from "./client-ui";
 import { listMediaAction } from "@/app/admin/(panel)/files/list-action";
+import { uploadImages } from "./upload";
 
-/** Reusable image chooser for the product, collection and blog editors. */
+/**
+ * Reusable image chooser for the product, collection and blog editors.
+ * Uploading here picks the new file straight away, so nobody has to go
+ * through Files first.
+ */
 export function MediaPicker({
   open,
   onClose,
   onPick,
+  canUpload = true,
 }: {
   open: boolean;
   onClose: () => void;
   onPick: (url: string) => void;
+  canUpload?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [pending, start] = useTransition();
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function upload(list: FileList | null) {
+    if (!list || list.length === 0) return;
+    setError(null);
+    setUploading(true);
+    const result = await uploadImages([list[0]]);
+    setUploading(false);
+    if (inputRef.current) inputRef.current.value = "";
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    const file = result.files[0];
+    if (file) onPick(file.url);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -29,6 +54,24 @@ export function MediaPicker({
 
   return (
     <Modal open={open} onClose={onClose} title="Choose an image" width={680}>
+      {canUpload ? (
+        <div className="mb-2 flex flex-wrap items-center gap-2 rounded border border-dashed border-[var(--a-border)] p-2">
+          <label htmlFor="media-picker-upload" className="a-label mb-0">
+            Upload new
+          </label>
+          <input
+            ref={inputRef}
+            id="media-picker-upload"
+            type="file"
+            accept="image/*"
+            className="a-input w-auto"
+            disabled={uploading}
+            onChange={(e) => upload(e.target.files)}
+          />
+          <span className="text-[11.5px] text-[var(--a-soft)]">{uploading ? "Uploading…" : "Converted to WebP, 8 MB max"}</span>
+        </div>
+      ) : null}
+      <ErrorNote message={error} />
       <label htmlFor="media-picker-search" className="a-label">
         Search files
       </label>

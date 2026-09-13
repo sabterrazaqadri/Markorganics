@@ -1,4 +1,4 @@
-import { BRAND_NAME, DELIVERY_FEE_PAISA, SITE_URL, SUPPORT_EMAIL, WHATSAPP_NUMBER } from "@/config/commerce";
+import { BRAND_NAME, DELIVERY_FEE_PAISA, SITE_URL, SUPPORT_EMAIL, WHATSAPP_NUMBER, absoluteImageUrl } from "@/config/commerce";
 import type { ProductWithVariants } from "@/lib/db/schema";
 import { paisaToDecimal } from "@/lib/money";
 
@@ -74,7 +74,7 @@ export function productJsonLd(p: ProductWithVariants) {
     "@type": "Product",
     name: p.name,
     description: p.shortDescription,
-    image: p.images.map((i) => `${SITE_URL}${i}`),
+    image: p.images.map(absoluteImageUrl),
     sku: p.variants[0]?.sku,
     brand: { "@type": "Brand", name: BRAND_NAME },
     url,

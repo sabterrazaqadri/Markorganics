@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { productInputSchema, type ProductInput } from "@/lib/validation/product";
 import { FAMILIES, FAMILY_ORDER } from "@/lib/catalog";
@@ -8,6 +8,7 @@ import { PRODUCT_STATUSES, type MetafieldType, type ProductStatus } from "@/lib/
 import { PRODUCT_STATUS_LABEL } from "./ui";
 import { ErrorNote, TagInput, useAction } from "./client-ui";
 import { MediaPicker } from "./MediaPicker";
+import { uploadImages } from "./upload";
 import { saveProductAction } from "@/app/admin/(panel)/products/actions";
 
 interface VariantRow {
@@ -115,9 +116,29 @@ export function ProductForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [slugTouched, setSlugTouched] = useState(Boolean(productId));
   const [pickingImages, setPickingImages] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const uploadRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof ProductFormValues>(key: K, value: ProductFormValues[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+  function appendImages(urls: string[]) {
+    if (urls.length === 0) return;
+    setForm((f) => {
+      const existing = f.images.split("\n").map((s) => s.trim()).filter(Boolean);
+      const merged = [...existing, ...urls.filter((u) => !existing.includes(u))];
+      return { ...f, images: merged.join("\n") };
+    });
+  }
+  async function uploadProductImages(list: FileList | null) {
+    if (!list || list.length === 0) return;
+    setError(null);
+    setUploading(true);
+    const result = await uploadImages(list);
+    setUploading(false);
+    if (uploadRef.current) uploadRef.current.value = "";
+    appendImages(result.files.map((f) => f.url));
+    if (result.error) setError(result.error);
   }
   function setVariant(i: number, patch: Partial<VariantRow>) {
     setForm((f) => ({ ...f, variants: f.variants.map((v, idx) => (idx === i ? { ...v, ...patch } : v)) }));
@@ -276,11 +297,29 @@ export function ProductForm({
         </section>
 
         <section className="a-card p-3">
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <h2>Images</h2>
-            <button type="button" className="a-btn a-btn-xs" onClick={() => setPickingImages(true)}>
-              Pick from files
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                ref={uploadRef}
+                id="product-image-upload"
+                type="file"
+                multiple
+                accept="image/*"
+                className="sr-only"
+                disabled={uploading}
+                onChange={(e) => uploadProductImages(e.target.files)}
+              />
+              <label
+                htmlFor="product-image-upload"
+                className={`a-btn a-btn-primary a-btn-xs cursor-pointer${uploading ? " pointer-events-none opacity-60" : ""}`}
+              >
+                {uploading ? "Uploading…" : "Upload images"}
+              </label>
+              <button type="button" className="a-btn a-btn-xs" onClick={() => setPickingImages(true)}>
+                Pick from files
+              </button>
+            </div>
           </div>
           {imageList.length ? (
             <ul className="mb-2 flex flex-wrap gap-2">
@@ -301,7 +340,7 @@ export function ProductForm({
             onClose={() => setPickingImages(false)}
             onPick={(url) => {
               setPickingImages(false);
-              set("images", form.images ? `${form.images.replace(/\n+$/, "")}\n${url}` : url);
+              appendImages([url]);
             }}
           />
         </section>

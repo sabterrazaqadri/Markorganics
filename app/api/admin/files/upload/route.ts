@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import sharp from "sharp";
 import { requirePermission, AdminForbiddenError, AdminUnauthorizedError } from "@/lib/admin/session";
 import { registerMedia } from "@/lib/admin/media";
+import { storeImage } from "@/lib/admin/storage";
 import { audit } from "@/lib/admin/audit";
 
 export const runtime = "nodejs";
@@ -12,12 +11,9 @@ const MAX_BYTES = 8 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]);
 
 /**
- * Uploads land in /public/uploads and are converted to WebP.
- *
- * This works in development and on any host with a writable disk. On a
- * read-only serverless filesystem the write fails and the response says so —
- * swapping this handler for a blob provider is the only change needed, because
- * everything else in the media library works off the stored URL.
+ * Uploads are converted to WebP and handed to lib/admin/storage, which picks
+ * Vercel Blob or the local /public/uploads folder. Everything else in the
+ * media library works off the stored URL.
  */
 export async function POST(req: Request) {
   let ctx;
@@ -51,11 +47,7 @@ export async function POST(req: Request) {
       .slice(0, 60);
     const filename = `${base || "image"}-${Date.now().toString(36)}.webp`;
 
-    const dir = join(process.cwd(), "public", "uploads");
-    await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, filename), output);
-
-    const url = `/uploads/${filename}`;
+    const url = await storeImage(filename, output, "image/webp");
     const media = await registerMedia({
       url,
       filename,
@@ -72,7 +64,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("upload failed", err);
     return NextResponse.json(
-      { error: "Could not save the file. On a read-only host, add the image by URL instead." },
+      { error: "Could not save the file. Check BLOB_READ_WRITE_TOKEN on the host, or add the image by URL instead." },
       { status: 500 },
     );
   }

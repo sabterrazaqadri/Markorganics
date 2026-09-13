@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { excerptOf, getPublishedPost, renderRichText } from "@/lib/content";
-import { SITE_URL } from "@/config/commerce";
+import { SITE_URL, absoluteImageUrl } from "@/config/commerce";
 
 export const revalidate = 900;
 
@@ -47,7 +47,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     datePublished: post.publishedAt?.toISOString(),
     dateModified: post.updatedAt.toISOString(),
     author: post.authorName ? { "@type": "Person", name: post.authorName } : undefined,
-    image: post.coverImage ? `${SITE_URL}${post.coverImage}` : undefined,
+    image: post.coverImage ? absoluteImageUrl(post.coverImage) : undefined,
     mainEntityOfPage: `${SITE_URL}/blog/${post.slug}`,
   };
 

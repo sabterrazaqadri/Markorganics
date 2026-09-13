@@ -6,6 +6,7 @@ import type { MediaFile } from "@/lib/db/schema";
 import type { MediaUsage } from "@/lib/admin/media";
 import { ConfirmButton, ErrorNote, Modal, useAction } from "./client-ui";
 import { addFromUrlAction, deleteMediaAction, indexImagesAction, setAltAction, usageAction } from "@/app/admin/(panel)/files/actions";
+import { uploadImages } from "./upload";
 
 function kb(bytes: number) {
   if (!bytes) return "—";
@@ -28,20 +29,11 @@ export function MediaLibrary({ files, canWrite }: { files: MediaFile[]; canWrite
     if (!fileList || fileList.length === 0) return;
     setError(null);
     setUploading(true);
-    let added = 0;
-    for (const file of Array.from(fileList).slice(0, 20)) {
-      const body = new FormData();
-      body.append("file", file);
-      const res = await fetch("/api/admin/files/upload", { method: "POST", body });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        setError(json.error ?? "Upload failed.");
-        break;
-      }
-      added += 1;
-    }
+    const result = await uploadImages(fileList);
     setUploading(false);
     if (inputRef.current) inputRef.current.value = "";
+    if (result.error) setError(result.error);
+    const added = result.files.length;
     if (added) {
       show(`${added} file${added === 1 ? "" : "s"} uploaded`);
       router.refresh();

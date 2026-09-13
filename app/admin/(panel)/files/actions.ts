@@ -8,8 +8,7 @@ import { deleteMedia, findUsage, getMedia, indexExistingProductImages, registerM
 import { mediaFromUrlSchema, mediaUpdateSchema } from "@/lib/validation/admin";
 import type { MediaUsage } from "@/lib/admin/media";
 import type { MediaFile } from "@/lib/db/schema";
-import { unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { removeStoredImage } from "@/lib/admin/storage";
 
 export async function setAltAction(id: string, alt: string): Promise<ActionResult<null>> {
   return run(async () => {
@@ -50,8 +49,8 @@ export async function usageAction(id: string): Promise<ActionResult<MediaUsage[]
 }
 
 /**
- * Media is the one thing genuinely deleted. The row goes, and so does the file
- * when it lives under /public/uploads.
+ * Media is the one thing genuinely deleted. The row goes, and so do the bytes
+ * when we stored them ourselves (local uploads folder or Vercel Blob).
  */
 export async function deleteMediaAction(id: string): Promise<ActionResult<null>> {
   return run(async () => {
@@ -67,9 +66,7 @@ export async function deleteMediaAction(id: string): Promise<ActionResult<null>>
     }
 
     await deleteMedia(id);
-    if (file.url.startsWith("/uploads/")) {
-      await unlink(join(process.cwd(), "public", file.url)).catch(() => {});
-    }
+    await removeStoredImage(file.url);
     await audit(ctx, {
       action: "media.delete",
       entityType: "media",

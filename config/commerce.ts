@@ -25,3 +25,8 @@ export function deliveryFeeFor(subtotalPaisa: number): number {
   if (subtotalPaisa <= 0) return 0;
   return subtotalPaisa >= FREE_SHIPPING_THRESHOLD_PAISA ? 0 : DELIVERY_FEE_PAISA;
 }
+
+/** Absolute URL for a stored image path. Uploads on Vercel Blob are already absolute. */
+export function absoluteImageUrl(src: string): string {
+  return /^https?:\/\//.test(src) ? src : `${SITE_URL}${src}`;
+}

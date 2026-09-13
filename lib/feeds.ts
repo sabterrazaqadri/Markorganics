@@ -1,5 +1,5 @@
 import "server-only";
-import { BRAND_NAME, SITE_URL } from "@/config/commerce";
+import { BRAND_NAME, SITE_URL, absoluteImageUrl } from "@/config/commerce";
 import { FAMILIES } from "@/lib/catalog";
 import type { ProductWithVariants } from "@/lib/db/schema";
 import { paisaToDecimal } from "@/lib/money";
@@ -53,7 +53,7 @@ export function buildProductFeed(
   const items = products.flatMap((p) =>
     p.variants.map((v) => {
       const link = `${SITE_URL}/products/${p.slug}`;
-      const image = p.images[0] ? `${SITE_URL}${p.images[0]}` : `${SITE_URL}/hero-bottle.png`;
+      const image = p.images[0] ? absoluteImageUrl(p.images[0]) : `${SITE_URL}/hero-bottle.png`;
       const extra = p.images
         .slice(1, 10)
         .map((i) => `      <g:additional_image_link>${esc(SITE_URL + i)}</g:additional_image_link>`);
