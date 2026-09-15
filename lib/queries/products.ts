@@ -3,6 +3,7 @@ import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, productVariants, type ProductWithVariants } from "@/lib/db/schema";
 import type { Family } from "@/lib/catalog";
+import { withLiveBundleStock } from "@/lib/bundles";
 
 const variantsOrdered = {
   variants: { where: isNull(productVariants.deletedAt), orderBy: [asc(productVariants.sortOrder)] },
@@ -12,35 +13,44 @@ const variantsOrdered = {
 const live = and(eq(products.status, "active"), isNull(products.deletedAt));
 
 export async function getActiveProducts(): Promise<ProductWithVariants[]> {
-  return db.query.products.findMany({
-    where: live,
-    orderBy: [asc(products.sortOrder), asc(products.name)],
-    with: variantsOrdered,
-  });
+  return withLiveBundleStock(
+    await db.query.products.findMany({
+      where: live,
+      orderBy: [asc(products.sortOrder), asc(products.name)],
+      with: variantsOrdered,
+    }),
+  );
 }
 
 export async function getProductsByFamily(family: Family): Promise<ProductWithVariants[]> {
-  return db.query.products.findMany({
-    where: and(live, eq(products.family, family)),
-    orderBy: [asc(products.sortOrder)],
-    with: variantsOrdered,
-  });
+  return withLiveBundleStock(
+    await db.query.products.findMany({
+      where: and(live, eq(products.family, family)),
+      orderBy: [asc(products.sortOrder)],
+      with: variantsOrdered,
+    }),
+  );
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductWithVariants | undefined> {
-  return db.query.products.findFirst({
+  const row = await db.query.products.findFirst({
     where: and(eq(products.slug, slug), live),
     with: variantsOrdered,
   });
+  if (!row) return undefined;
+  const [withStock] = await withLiveBundleStock([row]);
+  return withStock;
 }
 
 export async function getBestsellers(limit = 4): Promise<ProductWithVariants[]> {
-  return db.query.products.findMany({
-    where: and(live, eq(products.isBestseller, true)),
-    orderBy: [asc(products.sortOrder)],
-    with: variantsOrdered,
-    limit,
-  });
+  return withLiveBundleStock(
+    await db.query.products.findMany({
+      where: and(live, eq(products.isBestseller, true)),
+      orderBy: [asc(products.sortOrder)],
+      with: variantsOrdered,
+      limit,
+    }),
+  );
 }
 
 /** Admin: everything except soft-deleted rows. */

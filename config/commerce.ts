@@ -20,6 +20,12 @@ export const MAX_QTY_PER_LINE = 10;
 export const ORDER_RATE_LIMIT = { max: 5, windowMs: 10 * 60 * 1000 };
 /** Typical delivery window shown to customers. */
 export const DELIVERY_WINDOW = "2 to 5 working days";
+/** How long after checkout the customer may still add to the parcel from the order page. */
+export const POST_PURCHASE_WINDOW_MS = 60 * 60 * 1000;
+/** The product the homepage hero is built around. */
+export const FEATURED_PRODUCT_SLUG = "josh-mens-herbal-oil";
+/** Payment methods shown on the product page, cart and checkout. COD is always on. */
+export const PAYMENT_METHODS = ["Cash on delivery"] as const;
 
 export function deliveryFeeFor(subtotalPaisa: number): number {
   if (subtotalPaisa <= 0) return 0;

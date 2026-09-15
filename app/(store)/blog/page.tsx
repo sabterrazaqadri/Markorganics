@@ -20,21 +20,43 @@ const DAY = new Intl.DateTimeFormat("en-GB", {
 });
 
 export default async function BlogIndexPage() {
-  const posts = await getPublishedPosts(30);
+  const all = await getPublishedPosts(60);
+  // English and Urdu lists sit side by side; <html data-lang> shows one.
+  const en = all.filter((p) => p.lang !== "ur");
+  const ur = all.filter((p) => p.lang === "ur");
 
   return (
     <div className="container-x py-8 md:py-12">
-      <h1 className="text-3xl sm:text-4xl">Journal</h1>
+      <h1 className="text-3xl sm:text-4xl">
+        <span className="lang-en">Journal</span>
+        <span className="lang-ur urdu" lang="ur">
+          مضامین
+        </span>
+      </h1>
       <p className="mt-2 max-w-2xl text-ink-soft">
-        How the products are made, how to use them, and what we have learned selling them.
+        <span className="lang-en">How the products are made, how to use them, and what we have learned selling them.</span>
+        <span className="lang-ur urdu" lang="ur">
+          پروڈکٹس کیسے بنتی ہیں، کیسے استعمال ہوتی ہیں، اور بیچتے ہوئے ہم نے کیا سیکھا۔
+        </span>
       </p>
 
-      {posts.length === 0 ? (
+      {all.length === 0 ? (
         <p className="mt-8 text-ink-soft">Nothing published yet. Check back soon.</p>
       ) : (
-        <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <>
+          <PostGrid posts={en} className="lang-en" />
+          <PostGrid posts={ur.length ? ur : en} className="lang-ur" />
+        </>
+      )}
+    </div>
+  );
+}
+
+function PostGrid({ posts, className }: { posts: Awaited<ReturnType<typeof getPublishedPosts>>; className: string }) {
+  return (
+    <ul className={`mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 ${className}`}>
           {posts.map((post) => (
-            <li key={post.id} className="card overflow-hidden">
+            <li key={post.id} className={`card overflow-hidden ${post.lang === "ur" ? "urdu" : ""}`} lang={post.lang}>
               <Link href={`/blog/${post.slug}`} className="block">
                 {post.coverImage ? (
                   <Image
@@ -59,8 +81,6 @@ export default async function BlogIndexPage() {
               </Link>
             </li>
           ))}
-        </ul>
-      )}
-    </div>
+    </ul>
   );
 }

@@ -28,6 +28,8 @@ export const PERMISSIONS = [
   "discounts:write",
   "content:read",
   "content:write",
+  "reviews:read",
+  "reviews:write",
   "analytics:read",
   "settings:read",
   "settings:write",
@@ -66,6 +68,8 @@ const MANAGER: Permission[] = [
   "discounts:write",
   "content:read",
   "content:write",
+  "reviews:read",
+  "reviews:write",
   "analytics:read",
   "activity:read",
 ];
@@ -84,6 +88,8 @@ const STAFF: Permission[] = [
   "files:read",
   "customers:read",
   "customers:write",
+  "reviews:read",
+  "reviews:write",
 ];
 
 export const ROLE_PERMISSIONS: Record<UserRole, ReadonlySet<Permission>> = {

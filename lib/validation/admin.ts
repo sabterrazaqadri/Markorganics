@@ -399,6 +399,10 @@ export const storeSettingsSchema = z.object({
     .max(10)
     .regex(/^[A-Z0-9-]*$/, "Use capital letters, numbers and hyphens")
     .default("MRK-"),
+  acceptJazzcash: z.boolean().default(false),
+  acceptEasypaisa: z.boolean().default(false),
+  acceptBankTransfer: z.boolean().default(false),
+  paymentNote: trimmed(300).default(""),
 });
 
 export const deliverySettingsSchema = z.object({

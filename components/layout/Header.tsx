@@ -3,6 +3,7 @@ import { FAMILIES, FAMILY_ORDER } from "@/lib/catalog";
 import { getMenu, type MenuNode } from "@/lib/content";
 import { Logo } from "./Logo";
 import { CartButton } from "./CartButton";
+import { LangToggle } from "@/components/i18n/LangToggle";
 
 const familyUnderline: Record<string, string> = {
   oils: "after:bg-band-oil",
@@ -47,6 +48,7 @@ export async function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <LangToggle />
           <Link href="/track" className="btn btn-sm btn-secondary md:hidden" aria-label="Track order">
             Track
           </Link>

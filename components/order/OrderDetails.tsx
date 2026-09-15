@@ -11,7 +11,20 @@ export function formatPkDate(d: Date): string {
   }).format(d);
 }
 
+/** Lines from one bundle sit together under the bundle's name. */
+function groupLines(items: OrderWithItems["items"]) {
+  const groups: { key: string; bundleName: string | null; items: OrderWithItems["items"] }[] = [];
+  for (const item of items) {
+    const key = item.bundleSku ? `bundle:${item.bundleSku}` : `line:${item.id}`;
+    const g = groups.find((x) => x.key === key);
+    if (g) g.items.push(item);
+    else groups.push({ key, bundleName: item.bundleName ?? null, items: [item] });
+  }
+  return groups;
+}
+
 export function OrderDetails({ order }: { order: OrderWithItems }) {
+  const groups = groupLines(order.items);
   return (
     <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
       <div className="space-y-6">
@@ -30,17 +43,37 @@ export function OrderDetails({ order }: { order: OrderWithItems }) {
             Items
           </h2>
           <ul className="divide-y divide-rule">
-            {order.items.map((item) => (
-              <li key={item.id} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
-                <div>
-                  <p className="font-medium">{item.productName}</p>
-                  <p className="text-ink-soft">
-                    {item.variantLabel} &times; {item.quantity} at {formatPKR(item.unitPricePaisa)}
-                  </p>
-                </div>
-                <p className="tabular">{formatPKR(item.lineTotalPaisa)}</p>
-              </li>
-            ))}
+            {groups.map((g) =>
+              g.bundleName ? (
+                <li key={g.key} className="px-5 py-3 text-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="font-medium">
+                      {g.bundleName} <span className="rounded bg-band-care/10 px-1.5 py-0.5 text-xs text-band-care">Kit</span>
+                    </p>
+                    <p className="tabular">{formatPKR(g.items.reduce((n, i) => n + i.lineTotalPaisa, 0))}</p>
+                  </div>
+                  <ul className="mt-1 space-y-0.5 text-ink-soft">
+                    {g.items.map((item) => (
+                      <li key={item.id}>
+                        {item.productName} {item.variantLabel} &times; {item.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ) : (
+                g.items.map((item) => (
+                  <li key={item.id} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
+                    <div>
+                      <p className="font-medium">{item.productName}</p>
+                      <p className="text-ink-soft">
+                        {item.variantLabel} &times; {item.quantity} at {formatPKR(item.unitPricePaisa)}
+                      </p>
+                    </div>
+                    <p className="tabular">{formatPKR(item.lineTotalPaisa)}</p>
+                  </li>
+                ))
+              ),
+            )}
           </ul>
           <dl className="space-y-1.5 border-t border-rule px-5 py-4 text-sm">
             <div className="flex justify-between">

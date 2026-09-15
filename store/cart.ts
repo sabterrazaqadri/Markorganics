@@ -17,10 +17,18 @@ export interface CartItem {
   maxQty: number;
 }
 
+/** What the "added to cart" pop-up shows: the line that was just added and how many. */
+export interface JustAdded {
+  item: Omit<CartItem, "quantity">;
+  quantity: number;
+}
+
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
   hydrated: boolean;
+  /** Non-null while the added-to-cart pop-up is showing. Never persisted. */
+  justAdded: JustAdded | null;
   /** Only the code is kept; the amount always comes from the server. */
   discountCode: string;
   /** Stable per-browser key so an abandoned checkout updates one row. */
@@ -31,6 +39,8 @@ interface CartState {
   clear: () => void;
   open: () => void;
   close: () => void;
+  showAdded: (item: Omit<CartItem, "quantity">, quantity: number) => void;
+  dismissAdded: () => void;
   setHydrated: (v: boolean) => void;
   setDiscountCode: (code: string) => void;
 }
@@ -50,6 +60,7 @@ export const useCart = create<CartState>()(
       items: [],
       isOpen: false,
       hydrated: false,
+      justAdded: null,
       discountCode: "",
       sessionKey: makeSessionKey(),
       add: (item, quantity = 1) =>
@@ -75,8 +86,10 @@ export const useCart = create<CartState>()(
         })),
       remove: (variantId) => set((s) => ({ items: s.items.filter((i) => i.variantId !== variantId) })),
       clear: () => set({ items: [], discountCode: "" }),
-      open: () => set({ isOpen: true }),
+      open: () => set({ isOpen: true, justAdded: null }),
       close: () => set({ isOpen: false }),
+      showAdded: (item, quantity) => set({ justAdded: { item, quantity }, isOpen: false }),
+      dismissAdded: () => set({ justAdded: null }),
       setHydrated: (v) => set({ hydrated: v }),
       setDiscountCode: (discountCode) => set({ discountCode }),
     }),

@@ -65,7 +65,7 @@ const faqs = [
     title: "Are the oils safe for children?",
     content: (
       <p>
-        Mustard and coconut oil are traditional for baby massage from six months. Onion Oil, the balms and Desire Drop
+        Mustard and coconut oil are traditional for baby massage from six months. Onion Oil, the balms and Josh
         are for adults. Always patch-test first.
       </p>
     ),

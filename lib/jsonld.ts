@@ -1,5 +1,6 @@
 import { BRAND_NAME, DELIVERY_FEE_PAISA, SITE_URL, SUPPORT_EMAIL, WHATSAPP_NUMBER, absoluteImageUrl } from "@/config/commerce";
-import type { ProductWithVariants } from "@/lib/db/schema";
+import type { ProductFaq, ProductWithVariants, Review } from "@/lib/db/schema";
+import type { RatingSummary } from "@/lib/reviews";
 import { paisaToDecimal } from "@/lib/money";
 
 export function organizationJsonLd() {
@@ -27,7 +28,7 @@ export function organizationJsonLd() {
  * `sku` is the same variant SKU used as the offer id in every product feed,
  * so Google sees one offer, not several.
  */
-export function productJsonLd(p: ProductWithVariants) {
+export function productJsonLd(p: ProductWithVariants, social?: { summary: RatingSummary; reviews: Review[] }) {
   const url = `${SITE_URL}/products/${p.slug}`;
   // Prices are stable; a year out is the conventional horizon for this field.
   const priceValidUntil = new Date(Date.now() + 365 * 24 * 3600_000).toISOString().slice(0, 10);
@@ -69,6 +70,29 @@ export function productJsonLd(p: ProductWithVariants) {
     shippingDetails,
     hasMerchantReturnPolicy: returnPolicy,
   }));
+  /* Stars in the search result need approved reviews and nothing else; the
+     competitor's widget renders client-side, so Google never sees theirs. */
+  const rating =
+    social && social.summary.count > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: social.summary.average,
+            reviewCount: social.summary.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+          review: social.reviews.slice(0, 5).map((r) => ({
+            "@type": "Review",
+            author: { "@type": "Person", name: r.customerName },
+            datePublished: r.createdAt.toISOString().slice(0, 10),
+            reviewBody: r.body,
+            name: r.title || undefined,
+            inLanguage: r.lang,
+            reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+          })),
+        }
+      : {};
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -78,7 +102,21 @@ export function productJsonLd(p: ProductWithVariants) {
     sku: p.variants[0]?.sku,
     brand: { "@type": "Brand", name: BRAND_NAME },
     url,
+    ...rating,
     offers: offers.length === 1 ? offers[0] : offers,
+  };
+}
+
+/** FAQ rich result for the product page. Only English pairs, one language per markup block. */
+export function faqJsonLd(faqs: ProductFaq[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
   };
 }
 

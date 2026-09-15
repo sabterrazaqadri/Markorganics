@@ -1,15 +1,18 @@
 import Link from "next/link";
 import type { ProductWithVariants } from "@/lib/db/schema";
+import type { RatingSummary } from "@/lib/reviews";
 import { FAMILIES, type Family } from "@/lib/catalog";
 import { ProductCard } from "@/components/product/ProductCard";
 
 interface Props {
   family: Family;
   products: ProductWithVariants[];
+  ratings?: Map<string, RatingSummary>;
 }
 
-export function FamilySection({ family, products }: Props) {
+export function FamilySection({ family, products, ratings }: Props) {
   const fam = FAMILIES[family];
+  if (products.length === 0) return null;
   return (
     <section aria-labelledby={`family-${family}`} className="mt-4">
       <div className={`band ${fam.band}`} aria-hidden="true" />
@@ -27,7 +30,7 @@ export function FamilySection({ family, products }: Props) {
         </div>
         <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <ProductCard key={p.id} product={p} rating={ratings?.get(p.id)} />
           ))}
         </div>
       </div>

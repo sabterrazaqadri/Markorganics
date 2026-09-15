@@ -61,8 +61,12 @@ export const orderEventTypeEnum = pgEnum("order_event_type", [
 export const abandonedStatusEnum = pgEnum("abandoned_status", ["open", "recovered", "dismissed"]);
 export const draftStatusEnum = pgEnum("draft_status", ["open", "completed", "cancelled"]);
 export const menuHandleEnum = pgEnum("menu_handle", ["header", "footer"]);
+export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved", "rejected"]);
+export const reviewSourceEnum = pgEnum("review_source", ["storefront", "admin"]);
 
 export const ORDER_STATUSES = orderStatusEnum.enumValues;
+export const REVIEW_STATUSES = reviewStatusEnum.enumValues;
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export const USER_ROLES = userRoleEnum.enumValues;
 export type UserRole = (typeof USER_ROLES)[number];
@@ -79,6 +83,28 @@ const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 };
+
+/* ------------------------------------------------------------- json shapes */
+
+export interface ProductFaq {
+  q: string;
+  a: string;
+}
+
+/** Urdu copy for one product. Any field left out falls back to English. */
+export interface ProductI18nUr {
+  name?: string;
+  shortDescription?: string;
+  longDescription?: string;
+  howToUse?: string[];
+  ingredients?: string;
+  benefits?: string[];
+  faqs?: ProductFaq[];
+}
+
+export interface ProductI18n {
+  ur?: ProductI18nUr;
+}
 
 /* ------------------------------------------------------------ staff / auth */
 
@@ -218,6 +244,20 @@ export const products = pgTable(
     seoTitle: text("seo_title").notNull().default(""),
     seoDescription: text("seo_description").notNull().default(""),
     sortOrder: integer("sort_order").notNull().default(0),
+    /** Question and answer pairs shown in the PDP accordion and as FAQPage markup. */
+    faqs: jsonb("faqs").$type<ProductFaq[]>().notNull().default(sql`'[]'::jsonb`),
+    /**
+     * Urdu copy for the product page. Every field is optional: whatever is
+     * missing falls back to the English column, so a half-translated product
+     * still renders.
+     */
+    i18n: jsonb("i18n").$type<ProductI18n>().notNull().default(sql`'{}'::jsonb`),
+    /**
+     * A bundle sells other products together at one price. Its variants carry
+     * the price; bundle_components lists what ships. Stock is derived from the
+     * components and the checkout deducts the components, never the bundle.
+     */
+    isBundle: boolean("is_bundle").notNull().default(false),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
   },
@@ -254,6 +294,58 @@ export const productVariants = pgTable(
     uniqueIndex("product_variants_sku_idx").on(t.sku),
     index("product_variants_product_idx").on(t.productId),
     index("product_variants_stock_idx").on(t.stock),
+  ],
+);
+
+export const bundleComponents = pgTable(
+  "bundle_components",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    bundleVariantId: uuid("bundle_variant_id")
+      .notNull()
+      .references(() => productVariants.id, { onDelete: "cascade" }),
+    componentVariantId: uuid("component_variant_id")
+      .notNull()
+      .references(() => productVariants.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull().default(1),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (t) => [
+    uniqueIndex("bundle_components_pair_idx").on(t.bundleVariantId, t.componentVariantId),
+    index("bundle_components_component_idx").on(t.componentVariantId),
+  ],
+);
+
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    /** Set when the reviewer's phone matches a delivered order holding this product. */
+    orderId: uuid("order_id"),
+    customerName: text("customer_name").notNull(),
+    /** E.164 without "+", normalised like orders.phone. Never shown publicly. */
+    phone: text("phone"),
+    city: text("city").notNull().default(""),
+    rating: integer("rating").notNull(),
+    title: text("title").notNull().default(""),
+    body: text("body").notNull(),
+    lang: text("lang").notNull().default("en"),
+    status: reviewStatusEnum("status").notNull().default("pending"),
+    source: reviewSourceEnum("source").notNull().default("storefront"),
+    isVerified: boolean("is_verified").notNull().default(false),
+    reply: text("reply").notNull().default(""),
+    repliedAt: timestamp("replied_at", { withTimezone: true }),
+    ip: text("ip"),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    index("reviews_product_status_idx").on(t.productId, t.status, t.createdAt),
+    index("reviews_status_idx").on(t.status, t.createdAt),
+    index("reviews_phone_idx").on(t.phone),
   ],
 );
 
@@ -472,6 +564,9 @@ export const orderItems = pgTable(
     lineTotalPaisa: integer("line_total_paisa").notNull(),
     /** Manual per-line discount applied by staff while editing. */
     discountPaisa: integer("discount_paisa").notNull().default(0),
+    /** Set on every component line that came from a bundle, so the receipt can group them. */
+    bundleSku: text("bundle_sku"),
+    bundleName: text("bundle_name"),
   },
   (t) => [index("order_items_order_idx").on(t.orderId), index("order_items_variant_idx").on(t.variantId)],
 );
@@ -684,6 +779,10 @@ export const blogPosts = pgTable(
     status: contentStatusEnum("status").notNull().default("draft"),
     seoTitle: text("seo_title").notNull().default(""),
     seoDescription: text("seo_description").notNull().default(""),
+    /** "en" or "ur". Urdu posts render right-to-left in the Nastaliq stack. */
+    lang: text("lang").notNull().default("en"),
+    /** Slug of the same article in the other language, when one exists. */
+    translationSlug: text("translation_slug"),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
@@ -766,10 +865,27 @@ export const adminSessions = pgTable(
 export const productsRelations = relations(products, ({ many }) => ({
   variants: many(productVariants),
   collectionLinks: many(collectionProducts),
+  reviews: many(reviews),
 }));
 export const productVariantsRelations = relations(productVariants, ({ one, many }) => ({
   product: one(products, { fields: [productVariants.productId], references: [products.id] }),
   adjustments: many(inventoryAdjustments),
+  components: many(bundleComponents, { relationName: "bundleOf" }),
+}));
+export const bundleComponentsRelations = relations(bundleComponents, ({ one }) => ({
+  bundle: one(productVariants, {
+    fields: [bundleComponents.bundleVariantId],
+    references: [productVariants.id],
+    relationName: "bundleOf",
+  }),
+  component: one(productVariants, {
+    fields: [bundleComponents.componentVariantId],
+    references: [productVariants.id],
+    relationName: "componentOf",
+  }),
+}));
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  product: one(products, { fields: [reviews.productId], references: [products.id] }),
 }));
 export const inventoryAdjustmentsRelations = relations(inventoryAdjustments, ({ one }) => ({
   variant: one(productVariants, {
@@ -846,6 +962,8 @@ export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type OrderEvent = typeof orderEvents.$inferSelect;
 export type ProductWithVariants = Product & { variants: ProductVariant[] };
+export type BundleComponent = typeof bundleComponents.$inferSelect;
+export type Review = typeof reviews.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Customer = typeof customers.$inferSelect;
 export type Collection = typeof collections.$inferSelect;

@@ -7,6 +7,7 @@ import { formatPKR } from "@/lib/money";
 import { QuantityStepper } from "./QuantityStepper";
 import { DiscountField } from "./DiscountField";
 import { useCartQuote } from "./useCartQuote";
+import { FreeShippingBar } from "./FreeShippingBar";
 
 export function CartPage() {
   const items = useCart((s) => s.items);
@@ -118,11 +119,9 @@ export function CartPage() {
 
         <DiscountField code={discountCode} onApply={setDiscountCode} quote={quote} loading={loading} />
 
-        {quote && quote.freeShippingRemainingPaisa > 0 ? (
-          <p className="mt-3 text-xs text-ink-soft">
-            Add {formatPKR(quote.freeShippingRemainingPaisa)} more for free delivery.
-          </p>
-        ) : null}
+        <div className="mt-4">
+          <FreeShippingBar quote={quote} compact />
+        </div>
         <Link href="/checkout" className="btn btn-primary mt-5 w-full">
           Checkout
         </Link>

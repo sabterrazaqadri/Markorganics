@@ -15,6 +15,9 @@
 
   --font-display: var(--font-archivo), "Archivo", system-ui, sans-serif;
   --font-body: var(--font-inter-tight), "Inter Tight", system-ui, sans-serif;
+  /* Urdu: Nastaliq where the device has it, Naskh otherwise. Never a Latin fallback. */
+  --font-urdu: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", "Urdu Typesetting", "Noto Naskh Arabic", "Segoe UI",
+    Tahoma, serif;
 
   --radius-card: 6px;
 }
@@ -238,6 +241,49 @@
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+  .urdu {
+    font-family: var(--font-urdu);
+    direction: rtl;
+    line-height: 2;
+    letter-spacing: 0;
+  }
+  /* Nastaliq faces sit small on the em box; scale once, never for nested blocks. */
+  .urdu:not(.urdu .urdu) {
+    font-size: 1.15em;
+  }
+  .urdu h1,
+  .urdu h2,
+  .urdu h3,
+  .urdu h4,
+  h1.urdu,
+  h2.urdu,
+  h3.urdu {
+    font-family: var(--font-urdu);
+    line-height: 1.8;
+    letter-spacing: 0;
+    font-weight: 700;
+  }
+  /* Prices, SKUs and typed input stay in the Latin face inside Urdu blocks. */
+  .urdu .tabular,
+  .urdu input,
+  .urdu textarea,
+  .urdu select,
+  .urdu .latin {
+    font-family: var(--font-body);
+  }
+}
+
+/* Language blocks: the server renders both; <html data-lang> picks one.
+   Default (no attribute) is English, so a visitor with storage blocked still
+   sees a complete page. */
+.lang-ur {
+  display: none;
+}
+html[data-lang="ur"] .lang-ur {
+  display: revert;
+}
+html[data-lang="ur"] .lang-en {
+  display: none;
 }
 
 /* Cart / toast entrances: feedback motion only. */

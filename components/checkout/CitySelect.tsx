@@ -4,17 +4,27 @@ interface Props {
   value: string;
   onChange: (v: string) => void;
   error?: string;
+  label?: string;
+  hint?: string;
+  placeholder?: string;
 }
 
 /**
  * Searchable city picker using a native <datalist>: typing filters the list,
  * and any free text is accepted for towns not listed.
  */
-export function CitySelect({ value, onChange, error }: Props) {
+export function CitySelect({
+  value,
+  onChange,
+  error,
+  label = "City",
+  hint = "Not in the list? Type your town name.",
+  placeholder = "Start typing, e.g. Karachi",
+}: Props) {
   return (
     <div>
       <label htmlFor="city" className="label">
-        City
+        {label}
       </label>
       <input
         id="city"
@@ -24,7 +34,7 @@ export function CitySelect({ value, onChange, error }: Props) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         autoComplete="address-level2"
-        placeholder="Start typing, e.g. Karachi"
+        placeholder={placeholder}
         aria-invalid={error ? "true" : undefined}
         aria-describedby={error ? "city-error" : "city-hint"}
         required
@@ -40,7 +50,7 @@ export function CitySelect({ value, onChange, error }: Props) {
         </p>
       ) : (
         <p id="city-hint" className="mt-1 text-xs text-ink-soft">
-          Not in the list? Type your town name.
+          {hint}
         </p>
       )}
     </div>

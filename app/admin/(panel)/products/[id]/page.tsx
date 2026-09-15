@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductByIdAdmin } from "@/lib/queries/products";
-import { getMetafieldValues, listMetafieldDefinitions } from "@/lib/queries/products-admin";
+import {
+  getBundleComponentsForProduct,
+  getMetafieldValues,
+  listComponentOptions,
+  listMetafieldDefinitions,
+} from "@/lib/queries/products-admin";
+import { faqsToText } from "@/lib/validation/product";
 import { listCollections, getCollectionsForProduct } from "@/lib/admin/collections";
 import { requireView } from "@/lib/admin/session";
 import { can } from "@/lib/admin/permissions";
@@ -23,13 +29,16 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const p = await getProductByIdAdmin(id);
   if (!p) notFound();
 
-  const [definitions, values, collections, memberships, activity] = await Promise.all([
+  const [definitions, values, collections, memberships, activity, componentOptions, components] = await Promise.all([
     listMetafieldDefinitions(),
     getMetafieldValues(id),
     listCollections(),
     getCollectionsForProduct(id),
     listActivityForEntity("product", id, 8),
+    listComponentOptions(),
+    getBundleComponentsForProduct(id),
   ]);
+  const ur = p.i18n?.ur ?? {};
 
   const initial: ProductFormValues = {
     name: p.name,
@@ -61,6 +70,18 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     })),
     metafields: values,
     collectionIds: memberships.map((m) => m.id),
+    faqs: faqsToText(p.faqs),
+    urdu: {
+      name: ur.name ?? "",
+      shortDescription: ur.shortDescription ?? "",
+      longDescription: ur.longDescription ?? "",
+      howToUse: (ur.howToUse ?? []).join("\n"),
+      ingredients: ur.ingredients ?? "",
+      benefits: (ur.benefits ?? []).join("\n"),
+      faqs: faqsToText(ur.faqs),
+    },
+    isBundle: p.isBundle,
+    bundleComponents: components.map((c) => ({ variantId: c.variantId, quantity: String(c.quantity) })),
   };
 
   if (!can(ctx.user.role, "products:write")) {
@@ -111,7 +132,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           <>
             <ProductStatusPill status={p.status} />
             <Link href={`/products/${p.slug}`} target="_blank" rel="noopener" className="a-btn a-btn-xs">
-              View in store &nearr;
+              View in store ↗
             </Link>
           </>
         }
@@ -121,6 +142,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         initial={initial}
         definitions={definitions}
         collections={collections.map((c) => ({ id: c.id, title: c.title, type: c.type }))}
+        componentOptions={componentOptions.filter((o) => !p.variants.some((v) => v.id === o.variantId))}
       />
       {activity.length ? (
         <div className="mt-3">

@@ -9,6 +9,7 @@ import { abandonedCounts } from "@/lib/admin/abandoned";
 import { countLowStock } from "@/lib/admin/inventory";
 import { deadJobCount } from "@/lib/integrations/health";
 import { unreadInboundCount } from "@/lib/whatsapp/client";
+import { countPendingReviews } from "@/lib/reviews";
 import { logout } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -25,12 +26,13 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   if (!ctx) redirect("/admin/login");
   const role = ctx.user.role;
 
-  const [orders, abandoned, lowStock, deadJobs, unreadWhatsapp] = await Promise.all([
+  const [orders, abandoned, lowStock, deadJobs, unreadWhatsapp, pendingReviews] = await Promise.all([
     can(role, "orders:read") ? orderViewCounts() : Promise.resolve({} as Record<string, number>),
     can(role, "abandoned:read") ? abandonedCounts() : Promise.resolve({ open: 0, recovered: 0, dismissed: 0, valuePaisa: 0 }),
     can(role, "inventory:read") ? countLowStock() : Promise.resolve(0),
     can(role, "jobs:read") ? deadJobCount() : Promise.resolve(0),
     can(role, "customers:read") ? unreadInboundCount() : Promise.resolve(0),
+    can(role, "reviews:read") ? countPendingReviews() : Promise.resolve(0),
   ]);
 
   const structure: { title: string; entries: Entry[] }[] = [
@@ -47,6 +49,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         { href: "/admin/customers", label: "Customers", need: ["customers:read"], count: unreadWhatsapp },
         { href: "/admin/segments", label: "Segments", need: ["customers:read"] },
         { href: "/admin/discounts", label: "Discounts", need: ["discounts:read"] },
+        { href: "/admin/reviews", label: "Reviews", need: ["reviews:read"], count: pendingReviews },
       ],
     },
     {
@@ -117,7 +120,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
             rel="noopener"
             className="block py-1 text-[11.5px] text-[#9aa0a6] hover:text-white"
           >
-            View store &nearr;
+            View store ↗
           </a>
           <Link href="/admin/account" className="block py-1 text-[11.5px] text-[#9aa0a6] hover:text-white">
             My account

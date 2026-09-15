@@ -3,11 +3,13 @@ import { BRAND_NAME, SUPPORT_EMAIL } from "@/config/commerce";
 import { WhatsAppLink } from "@/components/analytics/WhatsAppLink";
 import { FAMILIES, FAMILY_ORDER } from "@/lib/catalog";
 import { getMenu } from "@/lib/content";
+import { getStoreSettings, paymentMethodsOf } from "@/lib/settings";
 import { Logo } from "./Logo";
 
 export async function Footer() {
   // A footer menu built in the admin replaces the Help column entirely.
-  const custom = await getMenu("footer");
+  const [custom, store] = await Promise.all([getMenu("footer"), getStoreSettings()]);
+  const payments = paymentMethodsOf(store);
 
   return (
     <footer className="mt-16 border-t border-rule bg-surface">
@@ -111,7 +113,7 @@ export async function Footer() {
           <p>
             &copy; {new Date().getFullYear()} {BRAND_NAME}. All prices in Pakistani rupees.
           </p>
-          <p>Cash on delivery only. No card details are ever requested.</p>
+          <p>Payment: {payments.join(" · ")}. No card details are ever requested.</p>
         </div>
       </div>
     </footer>

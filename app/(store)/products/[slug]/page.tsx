@@ -7,9 +7,19 @@ import { ProductGallery } from "@/components/product/ProductGallery";
 import { PurchasePanel } from "@/components/product/PurchasePanel";
 import { TrackEvent } from "@/components/analytics/TrackEvent";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Accordion } from "@/components/ui/Accordion";
-import { breadcrumbJsonLd, jsonLdString, productJsonLd } from "@/lib/jsonld";
+import { ProductCopy, ProductIntro } from "@/components/product/ProductCopy";
+import { TrustBadges } from "@/components/product/TrustBadges";
+import { BundleContents } from "@/components/product/BundleContents";
+import { Reviews } from "@/components/product/Reviews";
+import { Stars } from "@/components/product/Stars";
+import { breadcrumbJsonLd, faqJsonLd, jsonLdString, productJsonLd } from "@/lib/jsonld";
 import { formatPKR } from "@/lib/money";
+import { SITE_URL } from "@/config/commerce";
+import { getApprovedReviews, getRatingSummaries, getRatingSummary } from "@/lib/reviews";
+import { getRecentOrderCount, getSoldCounts } from "@/lib/queries/social-proof";
+import { getBundleComponents } from "@/lib/bundles";
+import { db } from "@/lib/db";
+import { getStoreSettings, paymentMethodsOf } from "@/lib/settings";
 
 export const revalidate = 60;
 export const dynamicParams = true;
@@ -29,13 +39,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!product) return { title: "Product not found" };
   const min = Math.min(...product.variants.map((v) => v.pricePaisa));
   return {
-    title: `${product.name} - ${formatPKR(min)}`,
-    description: product.shortDescription,
+    title: product.seoTitle || `${product.name} - ${formatPKR(min)}`,
+    description: product.seoDescription || product.shortDescription,
     alternates: { canonical: `/products/${product.slug}` },
     openGraph: {
       title: product.name,
       description: product.shortDescription,
       type: "website",
+      images: product.images[0] ? [{ url: product.images[0] }] : undefined,
     },
   };
 }
@@ -46,42 +57,34 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   const fam = FAMILIES[product.family];
-  const related = (await getProductsByFamily(product.family)).filter((p) => p.id !== product.id).slice(0, 4);
-
-  const accordion = [
-    {
-      id: "how-to-use",
-      title: "How to use",
-      defaultOpen: true,
-      content: (
-        <ol className="list-decimal space-y-1.5 pl-5">
-          {product.howToUse.map((step, i) => (
-            <li key={i}>{step}</li>
-          ))}
-        </ol>
-      ),
-    },
-    {
-      id: "ingredients",
-      title: "Ingredients",
-      content: <p>{product.ingredients}</p>,
-    },
-    {
-      id: "benefits",
-      title: "Benefits",
-      content: (
-        <ul className="list-disc space-y-1.5 pl-5">
-          {product.benefits.map((b, i) => (
-            <li key={i}>{b}</li>
-          ))}
-        </ul>
-      ),
-    },
-  ];
+  const [relatedRaw, summary, reviews, sold, orderedToday, components, store] = await Promise.all([
+    getProductsByFamily(product.family),
+    getRatingSummary(product.id),
+    getApprovedReviews(product.id, 20),
+    getSoldCounts([product.id]),
+    getRecentOrderCount(product.id),
+    product.isBundle ? getBundleComponents(db, product.variants.map((v) => v.id)) : Promise.resolve(new Map()),
+    getStoreSettings(),
+  ]);
+  const related = relatedRaw.filter((p) => p.id !== product.id).slice(0, 4);
+  const relatedRatings = await getRatingSummaries(related.map((p) => p.id));
+  const social = {
+    soldLast30Days: sold.get(product.id)?.last30Days ?? 0,
+    orderedToday,
+  };
+  const productUrl = `${SITE_URL}/products/${product.slug}`;
+  const firstVariant = product.variants[0];
+  const bundleParts = firstVariant ? (components.get(firstVariant.id) ?? []) : [];
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(productJsonLd(product)) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdString(productJsonLd(product, { summary, reviews })) }}
+      />
+      {product.faqs?.length ? (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(faqJsonLd(product.faqs)) }} />
+      ) : null}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -130,13 +133,21 @@ export default async function ProductPage({ params }: Props) {
           <ProductGallery images={product.images} name={product.name} />
 
           <div>
-            <p className={`text-sm font-medium ${fam.text}`}>{fam.heading}</p>
-            <h1 className="mt-1 text-3xl sm:text-4xl">{product.name}</h1>
-            <p className="mt-3 text-lg text-ink-soft">{product.shortDescription}</p>
+            <ProductIntro product={product} eyebrow={product.isBundle ? "Kit" : fam.heading} eyebrowClass={fam.text} />
+
+            {summary.count > 0 ? (
+              <a href="#reviews" className="mt-3 inline-flex items-center gap-2 text-sm text-ink-soft hover:text-ink">
+                <Stars value={summary.average} size={16} />
+                <span className="tabular font-medium text-ink">{summary.average.toFixed(1)}</span>
+                <span>
+                  ({summary.count} review{summary.count === 1 ? "" : "s"})
+                </span>
+              </a>
+            ) : null}
 
             <div className="mt-6">
               <PurchasePanel
-                product={{ slug: product.slug, name: product.name, family: product.family, image: product.images[0] ?? "" }}
+                product={{ slug: product.slug, name: product.name, family: product.family, image: product.images[0] ?? "", url: productUrl }}
                 variants={product.variants.map((v) => ({
                   id: v.id,
                   sku: v.sku,
@@ -144,20 +155,23 @@ export default async function ProductPage({ params }: Props) {
                   pricePaisa: v.pricePaisa,
                   compareAtPaisa: v.compareAtPaisa,
                   stock: v.stock,
+                  lowStockThreshold: v.lowStockThreshold,
                 }))}
+                social={social}
               />
             </div>
 
-            <div className="mt-8">
-              <h2 className="sr-only">About this product</h2>
-              <p className="text-ink-soft">{product.longDescription}</p>
-            </div>
+            {product.isBundle && firstVariant && bundleParts.length ? (
+              <BundleContents components={bundleParts} bundlePricePaisa={firstVariant.pricePaisa} />
+            ) : null}
 
-            <div className="mt-8">
-              <Accordion items={accordion} />
-            </div>
+            <TrustBadges paymentMethods={paymentMethodsOf(store)} paymentNote={store.paymentNote} />
+
+            <ProductCopy product={product} />
           </div>
         </div>
+
+        <Reviews productSlug={product.slug} summary={summary} reviews={reviews} />
 
         {related.length ? (
           <section aria-labelledby="related-title" className="mt-16 border-t border-rule pt-10">
@@ -166,7 +180,7 @@ export default async function ProductPage({ params }: Props) {
             </h2>
             <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
               {related.map((p) => (
-                <ProductCard key={p.id} product={p} />
+                <ProductCard key={p.id} product={p} rating={relatedRatings.get(p.id)} />
               ))}
             </div>
           </section>

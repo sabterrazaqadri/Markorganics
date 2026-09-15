@@ -34,6 +34,45 @@ const commaTags = z
     return out.slice(0, 30);
   });
 
+/**
+ * "Q: question
+A: answer" pairs separated by blank lines. A pair with a
+ * missing half is dropped rather than failing the whole save.
+ */
+export const faqText = z
+  .string()
+  .max(20_000)
+  .optional()
+  .transform((v) => {
+    if (!v) return [] as { q: string; a: string }[];
+    const out: { q: string; a: string }[] = [];
+    for (const block of v.replace(/\r\n/g, "\n").split(/\n\s*\n/)) {
+      const q = block.match(/^\s*Q:\s*(.+)$/im)?.[1]?.trim();
+      const a = block.match(/^\s*A:\s*([\s\S]+)$/im)?.[1]?.trim();
+      if (q && a) out.push({ q, a });
+    }
+    return out.slice(0, 20);
+  });
+
+export function faqsToText(faqs: { q: string; a: string }[] | null | undefined): string {
+  return (faqs ?? []).map((f) => `Q: ${f.q}\nA: ${f.a}`).join("\n\n");
+}
+
+export const urduInputSchema = z.object({
+  name: z.string().trim().max(80).optional().transform((v) => v ?? ""),
+  shortDescription: z.string().trim().max(200).optional().transform((v) => v ?? ""),
+  longDescription: z.string().trim().max(3000).optional().transform((v) => v ?? ""),
+  howToUse: lines.optional().transform((v) => v ?? []),
+  ingredients: z.string().trim().max(1000).optional().transform((v) => v ?? ""),
+  benefits: lines.optional().transform((v) => v ?? []),
+  faqs: faqText,
+});
+
+export const bundleComponentInputSchema = z.object({
+  variantId: z.string().uuid(),
+  quantity: z.coerce.number().int().min(1).max(20).default(1),
+});
+
 export const variantInputSchema = z.object({
   id: z.string().uuid().optional(),
   sku: z.string().trim().min(2, "SKU is required").max(40),
@@ -75,6 +114,23 @@ export const productInputSchema = z.object({
   variants: z.array(variantInputSchema).min(1, "Add at least one variant").max(10),
   metafields: z.array(metafieldInputSchema).max(50).default([]),
   collectionIds: z.array(z.string().uuid()).max(50).default([]),
+  faqs: faqText,
+  urdu: urduInputSchema.default({
+    name: "",
+    shortDescription: "",
+    longDescription: "",
+    howToUse: [],
+    ingredients: "",
+    benefits: [],
+    faqs: [],
+  }),
+  isBundle: z.boolean().default(false),
+  /** Applied to every variant of a bundle. Ignored when isBundle is false. */
+  bundleComponents: z.array(bundleComponentInputSchema).max(10).default([]),
+}).superRefine((v, ctx) => {
+  if (v.isBundle && v.bundleComponents.length === 0) {
+    ctx.addIssue({ code: "custom", path: ["bundleComponents"], message: "A kit needs at least one product inside it" });
+  }
 });
 
 export type ProductInput = z.input<typeof productInputSchema>;

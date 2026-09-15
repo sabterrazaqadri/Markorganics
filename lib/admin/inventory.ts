@@ -8,6 +8,7 @@ import {
   users,
   type InventoryReason,
 } from "@/lib/db/schema";
+import { syncBundleStock } from "@/lib/bundles";
 
 type Tx = Db | Parameters<Parameters<Db["transaction"]>[0]>[0];
 
@@ -46,6 +47,8 @@ export async function adjustStock(tx: Tx, input: AdjustInput): Promise<number> {
     userId: input.userId ?? null,
     orderId: input.orderId ?? null,
   });
+  // Any bundle that ships this variant can now cover a different number of orders.
+  await syncBundleStock(tx, [input.variantId]);
   return row.stock;
 }
 
@@ -76,6 +79,7 @@ export async function setStock(
     note: input.note ?? "",
     userId: input.userId ?? null,
   });
+  await syncBundleStock(tx, [input.variantId]);
   return { from: current.stock, to };
 }
 

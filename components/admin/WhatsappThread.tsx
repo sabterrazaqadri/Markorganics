@@ -33,7 +33,7 @@ export function WhatsappThread({ phone, messages }: { phone: string; messages: T
       }
       actions={
         <a href={`https://wa.me/${waNumber(phone)}`} target="_blank" rel="noopener" className="a-btn-link">
-          Reply in WhatsApp &nearr;
+          Reply in WhatsApp ↗
         </a>
       }
     >

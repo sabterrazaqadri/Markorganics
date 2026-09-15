@@ -110,11 +110,11 @@ export function CourierPanel({
 
         <div className="mt-2 flex flex-wrap gap-2">
           <a href={trackingUrl} target="_blank" rel="noopener" className="a-btn a-btn-xs">
-            Customer tracking page &nearr;
+            Customer tracking page ↗
           </a>
           {shipment.labelUrl ? (
             <a href={shipment.labelUrl} target="_blank" rel="noopener" className="a-btn a-btn-xs">
-              Label &nearr;
+              Label ↗
             </a>
           ) : null}
           <button

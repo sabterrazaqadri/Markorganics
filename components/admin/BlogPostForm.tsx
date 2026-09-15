@@ -184,7 +184,7 @@ export function BlogPostForm({ initial }: { initial: PostFormValues }) {
           </button>
           {form.id && form.status === "published" && !scheduled ? (
             <a href={`/blog/${form.slug}`} target="_blank" rel="noopener" className="a-btn a-btn-xs w-full">
-              View on the storefront &nearr;
+              View on the storefront ↗
             </a>
           ) : null}
         </section>

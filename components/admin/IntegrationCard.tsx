@@ -209,7 +209,7 @@ export function IntegrationCard({
             </button>
             {spec.docs ? (
               <a href={spec.docs} target="_blank" rel="noopener" className="a-btn a-btn-xs">
-                Documentation &nearr;
+                Documentation ↗
               </a>
             ) : null}
           </div>

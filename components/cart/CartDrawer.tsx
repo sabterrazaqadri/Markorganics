@@ -7,6 +7,7 @@ import { cartCount, cartSubtotal, useCart } from "@/store/cart";
 import { formatPKR } from "@/lib/money";
 import { useCartQuote } from "./useCartQuote";
 import { QuantityStepper } from "./QuantityStepper";
+import { FreeShippingBar } from "./FreeShippingBar";
 
 export function CartDrawer() {
   const isOpen = useCart((s) => s.isOpen);
@@ -56,7 +57,6 @@ export function CartDrawer() {
 
   const subtotal = quote?.subtotalPaisa ?? cartSubtotal(items);
   const count = quote?.itemCount ?? cartCount(items);
-  const toFree = quote?.freeShippingRemainingPaisa ?? 0;
 
   if (!isOpen) return null;
 
@@ -159,11 +159,9 @@ export function CartDrawer() {
                   <dd className="tabular">{quote ? formatPKR(quote.totalPaisa) : "—"}</dd>
                 </div>
               </dl>
-              {toFree > 0 ? (
-                <p className="mt-2 text-xs text-ink-soft">Add {formatPKR(toFree)} more for free delivery.</p>
-              ) : (
-                <p className="mt-2 text-xs text-band-care">Delivery is free on this order.</p>
-              )}
+              <div className="mt-3">
+                <FreeShippingBar quote={quote} compact />
+              </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <Link href="/cart" className="btn btn-secondary" onClick={close}>
                   View cart

@@ -2,15 +2,18 @@ import "server-only";
 import { and, asc, desc, eq, inArray, isNull, notInArray, sql, type SQL } from "drizzle-orm";
 import { db, type Db } from "@/lib/db";
 import {
+  bundleComponents,
   collectionProducts,
   metafieldDefinitions,
   metafieldValues,
   productVariants,
   products,
   type Product,
+  type ProductI18n,
   type ProductStatus,
   type ProductVariant,
 } from "@/lib/db/schema";
+import { syncOneBundle } from "@/lib/bundles";
 import type { ProductValues } from "@/lib/validation/product";
 import type { ProductsFilter } from "@/lib/validation/admin";
 import { rupeesToPaisa } from "@/lib/money";
@@ -69,8 +72,54 @@ function productRow(values: ProductValues) {
     images: values.images,
     isBestseller: values.isBestseller,
     sortOrder: values.sortOrder,
+    faqs: values.faqs,
+    i18n: i18nOf(values),
+    isBundle: values.isBundle,
     updatedAt: new Date(),
   };
+}
+
+/** Only non-empty Urdu fields are stored, so the storefront falls back per field. */
+function i18nOf(values: ProductValues): ProductI18n {
+  const u = values.urdu;
+  const ur: NonNullable<ProductI18n["ur"]> = {};
+  if (u.name) ur.name = u.name;
+  if (u.shortDescription) ur.shortDescription = u.shortDescription;
+  if (u.longDescription) ur.longDescription = u.longDescription;
+  if (u.howToUse.length) ur.howToUse = u.howToUse;
+  if (u.ingredients) ur.ingredients = u.ingredients;
+  if (u.benefits.length) ur.benefits = u.benefits;
+  if (u.faqs.length) ur.faqs = u.faqs;
+  return Object.keys(ur).length ? { ur } : {};
+}
+
+/**
+ * Every variant of a bundle ships the same components. Rows are replaced
+ * wholesale, then the derived stock is refreshed. A bundle may not contain
+ * another bundle or itself.
+ */
+async function writeBundleComponents(tx: Tx, productId: string, variantIds: string[], values: ProductValues) {
+  await tx.delete(bundleComponents).where(inArray(bundleComponents.bundleVariantId, variantIds));
+  if (!values.isBundle || values.bundleComponents.length === 0) return;
+
+  const wanted = values.bundleComponents.map((c) => c.variantId);
+  const rows = await tx
+    .select({ id: productVariants.id, productId: productVariants.productId, isBundle: products.isBundle })
+    .from(productVariants)
+    .innerJoin(products, eq(products.id, productVariants.productId))
+    .where(and(inArray(productVariants.id, wanted), isNull(productVariants.deletedAt)));
+  const ok = new Map(rows.map((r) => [r.id, r]));
+  for (const c of values.bundleComponents) {
+    const row = ok.get(c.variantId);
+    if (!row) throw new ConflictError("One of the kit products no longer exists.");
+    if (row.isBundle || row.productId === productId) throw new ConflictError("A kit cannot contain another kit or itself.");
+  }
+  for (const bundleVariantId of variantIds) {
+    await tx.insert(bundleComponents).values(
+      values.bundleComponents.map((c, i) => ({ bundleVariantId, componentVariantId: c.variantId, quantity: c.quantity, sortOrder: i })),
+    );
+    await syncOneBundle(tx, bundleVariantId);
+  }
 }
 
 async function writeMetafields(tx: Tx, productId: string, values: ProductValues) {
@@ -121,21 +170,30 @@ export async function createProduct(values: ProductValues, userId?: string): Pro
   await assertUniqueSlugAndSkus(values);
   const id = await db.transaction(async (tx) => {
     const [row] = await tx.insert(products).values(productRow(values)).returning({ id: products.id });
-    await tx.insert(productVariants).values(
-      values.variants.map((v, i) => ({
-        productId: row.id,
-        sku: v.sku,
-        label: v.label,
-        barcode: v.barcode,
-        pricePaisa: rupeesToPaisa(v.priceRupees),
-        compareAtPaisa: v.compareAtRupees ? rupeesToPaisa(v.compareAtRupees) : null,
-        stock: v.stock,
-        lowStockThreshold: v.lowStockThreshold,
-        sortOrder: i,
-      })),
-    );
+    const inserted = await tx
+      .insert(productVariants)
+      .values(
+        values.variants.map((v, i) => ({
+          productId: row.id,
+          sku: v.sku,
+          label: v.label,
+          barcode: v.barcode,
+          pricePaisa: rupeesToPaisa(v.priceRupees),
+          compareAtPaisa: v.compareAtRupees ? rupeesToPaisa(v.compareAtRupees) : null,
+          stock: values.isBundle ? 0 : v.stock,
+          lowStockThreshold: v.lowStockThreshold,
+          sortOrder: i,
+        })),
+      )
+      .returning({ id: productVariants.id });
     await writeMetafields(tx, row.id, values);
     await writeManualCollections(tx, row.id, values.collectionIds);
+    await writeBundleComponents(
+      tx,
+      row.id,
+      inserted.map((v) => v.id),
+      values,
+    );
     return row.id;
   });
   // Automatic collections re-evaluate on every product save.
@@ -163,13 +221,16 @@ export async function updateProduct(id: string, values: ProductValues, userId?: 
       };
       if (v.id) {
         await tx.update(productVariants).set(data).where(and(eq(productVariants.id, v.id), eq(productVariants.productId, id)));
-        // Stock moves through the ledger so the history stays complete.
-        await setStock(tx, { variantId: v.id, stock: v.stock, reason: "correction", note: "Edited on the product page", userId });
+        // Stock moves through the ledger so the history stays complete. A
+        // bundle's stock is derived from its parts and is never set by hand.
+        if (!values.isBundle) {
+          await setStock(tx, { variantId: v.id, stock: v.stock, reason: "correction", note: "Edited on the product page", userId });
+        }
         keepIds.push(v.id);
       } else {
         const [row] = await tx
           .insert(productVariants)
-          .values({ ...data, productId: id, stock: v.stock })
+          .values({ ...data, productId: id, stock: values.isBundle ? 0 : v.stock })
           .returning({ id: productVariants.id });
         keepIds.push(row.id);
       }
@@ -183,8 +244,39 @@ export async function updateProduct(id: string, values: ProductValues, userId?: 
 
     await writeMetafields(tx, id, values);
     await writeManualCollections(tx, id, values.collectionIds);
+    await writeBundleComponents(tx, id, keepIds, values);
   });
   await reevaluateAllAutomaticCollections();
+}
+
+/** Variants a kit can be built from: every live, non-bundle variant. */
+export async function listComponentOptions(): Promise<{ variantId: string; label: string; pricePaisa: number }[]> {
+  const rows = await db
+    .select({
+      variantId: productVariants.id,
+      productName: products.name,
+      variantLabel: productVariants.label,
+      pricePaisa: productVariants.pricePaisa,
+    })
+    .from(productVariants)
+    .innerJoin(products, eq(products.id, productVariants.productId))
+    .where(and(isNull(products.deletedAt), isNull(productVariants.deletedAt), eq(products.isBundle, false)))
+    .orderBy(asc(products.sortOrder), asc(products.name), asc(productVariants.sortOrder));
+  return rows.map((r) => ({ variantId: r.variantId, label: `${r.productName} ${r.variantLabel}`, pricePaisa: r.pricePaisa }));
+}
+
+export async function getBundleComponentsForProduct(productId: string): Promise<{ variantId: string; quantity: number }[]> {
+  const rows = await db
+    .select({ componentVariantId: bundleComponents.componentVariantId, quantity: bundleComponents.quantity })
+    .from(bundleComponents)
+    .innerJoin(productVariants, eq(productVariants.id, bundleComponents.bundleVariantId))
+    .where(eq(productVariants.productId, productId))
+    .orderBy(asc(bundleComponents.sortOrder));
+  // Every variant carries the same list; return it once.
+  const seen = new Set<string>();
+  return rows
+    .filter((r) => (seen.has(r.componentVariantId) ? false : (seen.add(r.componentVariantId), true)))
+    .map((r) => ({ variantId: r.componentVariantId, quantity: r.quantity }));
 }
 
 export async function setProductStatus(id: string, status: ProductStatus): Promise<void> {

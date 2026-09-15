@@ -6,6 +6,7 @@ import { CartHydration } from "@/components/cart/CartHydration";
 import { Analytics } from "@/components/analytics/Analytics";
 import { getStorefrontIntegrations } from "@/lib/integrations/config";
 import { DEFAULT_SETTINGS, getIntegrationSettings } from "@/lib/settings";
+import { LangScript } from "@/components/i18n/LangScript";
 import "./globals.css";
 
 // Variable fonts committed to the repo (latin subset), self-hosted by next/font.
@@ -93,8 +94,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const [ids, requireConsent] = await Promise.all([pixelIds(), consentSetting()]);
 
   return (
-    <html lang="en" className={`${archivo.variable} ${interTight.variable}`}>
+    <html lang="en" className={`${archivo.variable} ${interTight.variable}`} suppressHydrationWarning>
       <body className="min-h-dvh bg-paper text-ink">
+        <LangScript />
         {children}
         <CartHydration />
         <ToastViewport />

@@ -1,5 +1,5 @@
 import { requireView } from "@/lib/admin/session";
-import { listMetafieldDefinitions } from "@/lib/queries/products-admin";
+import { listComponentOptions, listMetafieldDefinitions } from "@/lib/queries/products-admin";
 import { listCollections } from "@/lib/admin/collections";
 import { EMPTY_FORM, ProductForm } from "@/components/admin/ProductForm";
 import { PageHeader } from "@/components/admin/ui";
@@ -9,7 +9,11 @@ export const dynamic = "force-dynamic";
 
 export default async function NewProductPage() {
   await requireView("products:write");
-  const [definitions, collections] = await Promise.all([listMetafieldDefinitions(), listCollections()]);
+  const [definitions, collections, componentOptions] = await Promise.all([
+    listMetafieldDefinitions(),
+    listCollections(),
+    listComponentOptions(),
+  ]);
 
   return (
     <>
@@ -22,6 +26,7 @@ export default async function NewProductPage() {
         initial={EMPTY_FORM}
         definitions={definitions}
         collections={collections.map((c) => ({ id: c.id, title: c.title, type: c.type }))}
+        componentOptions={componentOptions}
       />
     </>
   );

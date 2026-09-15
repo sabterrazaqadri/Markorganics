@@ -22,7 +22,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: post.seoTitle || post.title,
     description: post.seoDescription || excerptOf(post, 155),
-    alternates: { canonical: `/blog/${post.slug}` },
+    alternates: {
+      canonical: `/blog/${post.slug}`,
+      languages: post.translationSlug
+        ? { [post.lang === "ur" ? "en" : "ur"]: `/blog/${post.translationSlug}`, [post.lang]: `/blog/${post.slug}` }
+        : undefined,
+    },
     openGraph: {
       type: "article",
       title: post.seoTitle || post.title,
@@ -51,14 +56,27 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     mainEntityOfPage: `${SITE_URL}/blog/${post.slug}`,
   };
 
-  return (
-    <article className="container-x py-8 md:py-12">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+  const isUrdu = post.lang === "ur";
+  const translation = post.translationSlug ? await getPublishedPost(post.translationSlug) : undefined;
 
-      <nav aria-label="Breadcrumb" className="text-sm text-ink-soft">
+  return (
+    <article className={`container-x py-8 md:py-12 ${isUrdu ? "urdu" : ""}`} lang={post.lang} dir={isUrdu ? "rtl" : "ltr"}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ ...jsonLd, inLanguage: post.lang }) }} />
+
+      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center justify-between gap-2 text-sm text-ink-soft">
         <Link href="/blog" className="underline underline-offset-4">
-          Journal
+          {isUrdu ? "مضامین" : "Journal"}
         </Link>
+        {translation ? (
+          <Link
+            href={`/blog/${translation.slug}`}
+            hrefLang={translation.lang}
+            lang={translation.lang}
+            className={`rounded border border-rule px-2.5 py-1 text-xs font-medium hover:border-ink ${translation.lang === "ur" ? "urdu" : ""}`}
+          >
+            {translation.lang === "ur" ? "اردو میں پڑھیں" : "Read in English"}
+          </Link>
+        ) : null}
       </nav>
 
       <h1 className="mt-2 max-w-3xl text-3xl sm:text-4xl">{post.title}</h1>

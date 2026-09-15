@@ -36,6 +36,22 @@ export interface CollectionOption {
   type: string;
 }
 
+export interface ComponentOption {
+  variantId: string;
+  label: string;
+  pricePaisa: number;
+}
+
+export interface UrduFormValues {
+  name: string;
+  shortDescription: string;
+  longDescription: string;
+  howToUse: string;
+  ingredients: string;
+  benefits: string;
+  faqs: string;
+}
+
 export interface ProductFormValues {
   name: string;
   slug: string;
@@ -57,7 +73,21 @@ export interface ProductFormValues {
   variants: VariantRow[];
   metafields: Record<string, string>;
   collectionIds: string[];
+  faqs: string;
+  urdu: UrduFormValues;
+  isBundle: boolean;
+  bundleComponents: { variantId: string; quantity: string }[];
 }
+
+export const EMPTY_URDU: UrduFormValues = {
+  name: "",
+  shortDescription: "",
+  longDescription: "",
+  howToUse: "",
+  ingredients: "",
+  benefits: "",
+  faqs: "",
+};
 
 const EMPTY_VARIANT: VariantRow = {
   sku: "",
@@ -90,6 +120,10 @@ export const EMPTY_FORM: ProductFormValues = {
   variants: [{ ...EMPTY_VARIANT }],
   metafields: {},
   collectionIds: [],
+  faqs: "",
+  urdu: { ...EMPTY_URDU },
+  isBundle: false,
+  bundleComponents: [],
 };
 
 function slugify(s: string) {
@@ -104,11 +138,13 @@ export function ProductForm({
   initial,
   definitions,
   collections,
+  componentOptions = [],
 }: {
   productId?: string;
   initial: ProductFormValues;
   definitions: MetafieldDef[];
   collections: CollectionOption[];
+  componentOptions?: ComponentOption[];
 }) {
   const router = useRouter();
   const { pending, error, runAction, setError } = useAction();
@@ -142,6 +178,12 @@ export function ProductForm({
   }
   function setVariant(i: number, patch: Partial<VariantRow>) {
     setForm((f) => ({ ...f, variants: f.variants.map((v, idx) => (idx === i ? { ...v, ...patch } : v)) }));
+  }
+  function setUrdu<K extends keyof UrduFormValues>(key: K, value: string) {
+    setForm((f) => ({ ...f, urdu: { ...f.urdu, [key]: value } }));
+  }
+  function setComponent(i: number, patch: Partial<{ variantId: string; quantity: string }>) {
+    setForm((f) => ({ ...f, bundleComponents: f.bundleComponents.map((c, idx) => (idx === i ? { ...c, ...patch } : c)) }));
   }
 
   function onSubmit(e: FormEvent) {
@@ -179,6 +221,12 @@ export function ProductForm({
       })),
       metafields: definitions.map((d) => ({ definitionId: d.id, value: form.metafields[d.id] ?? "" })),
       collectionIds: form.collectionIds,
+      faqs: form.faqs,
+      urdu: form.urdu,
+      isBundle: form.isBundle,
+      bundleComponents: form.isBundle
+        ? form.bundleComponents.filter((c) => c.variantId).map((c) => ({ variantId: c.variantId, quantity: c.quantity }))
+        : [],
     };
 
     const parsed = productInputSchema.safeParse(input);
@@ -293,6 +341,161 @@ export function ProductForm({
               Ingredients
             </label>
             <textarea id="ingredients" className="a-textarea" value={form.ingredients} onChange={(e) => set("ingredients", e.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="faqs" className="a-label">
+              Questions and answers
+            </label>
+            <textarea
+              id="faqs"
+              className="a-textarea min-h-32 font-mono text-[12px]"
+              value={form.faqs}
+              placeholder={"Q: Is it safe for daily use?\nA: Yes. Apply once a day on clean skin.\n\nQ: How long does one bottle last?\nA: About a month at 5 drops a day."}
+              onChange={(e) => set("faqs", e.target.value)}
+            />
+            <p className="a-hint">One pair per block: a line starting with Q:, then a line starting with A:, blank line between pairs. Shown on the product page and sent to Google as FAQ markup.</p>
+          </div>
+        </section>
+
+        <section className="a-card space-y-3 p-3">
+          <h2 className="mb-1">Kit (bundle)</h2>
+          <div className="flex items-center gap-2">
+            <input id="isBundle" type="checkbox" checked={form.isBundle} onChange={(e) => set("isBundle", e.target.checked)} />
+            <label htmlFor="isBundle" className="text-[12.5px]">
+              This product is a kit of other products
+            </label>
+          </div>
+          {form.isBundle ? (
+            <>
+              <p className="a-hint">
+                The kit sells at the variant price below. Stock is worked out from the parts and cannot be edited here. At checkout the parts leave the shelf, never the kit.
+              </p>
+              <div className="a-scroll">
+                <table className="a-table">
+                  <thead>
+                    <tr>
+                      <th>Product inside the kit</th>
+                      <th className="a-num" style={{ width: 90 }}>
+                        Qty
+                      </th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {form.bundleComponents.map((c, i) => (
+                      <tr key={i}>
+                        <td>
+                          <select
+                            className="a-select"
+                            aria-label={`Component ${i + 1}`}
+                            value={c.variantId}
+                            onChange={(e) => setComponent(i, { variantId: e.target.value })}
+                          >
+                            <option value="">Choose a product</option>
+                            {componentOptions.map((o) => (
+                              <option key={o.variantId} value={o.variantId}>
+                                {o.label} — Rs {Math.round(o.pricePaisa / 100)}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>
+                          <input
+                            className="a-input a-input-xs text-right"
+                            type="number"
+                            min={1}
+                            aria-label={`Quantity of component ${i + 1}`}
+                            value={c.quantity}
+                            onChange={(e) => setComponent(i, { quantity: e.target.value })}
+                          />
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="a-btn-link text-[var(--a-danger)]"
+                            onClick={() => set("bundleComponents", form.bundleComponents.filter((_, idx) => idx !== i))}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {err("bundleComponents")}
+              <button
+                type="button"
+                className="a-btn a-btn-xs"
+                onClick={() => set("bundleComponents", [...form.bundleComponents, { variantId: "", quantity: "1" }])}
+              >
+                Add a product
+              </button>
+              {(() => {
+                const list = form.bundleComponents.reduce((n, c) => {
+                  const o = componentOptions.find((x) => x.variantId === c.variantId);
+                  return n + (o ? o.pricePaisa * Math.max(1, Number(c.quantity) || 1) : 0);
+                }, 0);
+                const price = Number(form.variants[0]?.priceRupees) * 100 || 0;
+                return list > 0 ? (
+                  <p className="a-hint">
+                    Parts bought separately: Rs {Math.round(list / 100)}. Kit price: Rs {Math.round(price / 100)}.
+                    {price > 0 && list > price ? ` Customer saves Rs ${Math.round((list - price) / 100)} (${Math.round(((list - price) / list) * 100)}%).` : ""}
+                  </p>
+                ) : null;
+              })()}
+            </>
+          ) : null}
+        </section>
+
+        <section className="a-card space-y-3 p-3">
+          <h2 className="mb-1">Urdu copy (اردو)</h2>
+          <p className="a-hint">Shown when a visitor switches the store to Urdu. Anything left blank falls back to the English text above.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="ur-name" className="a-label">
+                Name in Urdu
+              </label>
+              <input id="ur-name" className="a-input" dir="rtl" lang="ur" value={form.urdu.name} onChange={(e) => setUrdu("name", e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="ur-short" className="a-label">
+                Short description
+              </label>
+              <input id="ur-short" className="a-input" dir="rtl" lang="ur" maxLength={200} value={form.urdu.shortDescription} onChange={(e) => setUrdu("shortDescription", e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="ur-long" className="a-label">
+              Long description
+            </label>
+            <textarea id="ur-long" className="a-textarea min-h-24" dir="rtl" lang="ur" value={form.urdu.longDescription} onChange={(e) => setUrdu("longDescription", e.target.value)} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="ur-benefits" className="a-label">
+                Benefits (one per line)
+              </label>
+              <textarea id="ur-benefits" className="a-textarea" dir="rtl" lang="ur" value={form.urdu.benefits} onChange={(e) => setUrdu("benefits", e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="ur-how" className="a-label">
+                How to use (one per line)
+              </label>
+              <textarea id="ur-how" className="a-textarea" dir="rtl" lang="ur" value={form.urdu.howToUse} onChange={(e) => setUrdu("howToUse", e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="ur-ingredients" className="a-label">
+              Ingredients
+            </label>
+            <textarea id="ur-ingredients" className="a-textarea" dir="rtl" lang="ur" value={form.urdu.ingredients} onChange={(e) => setUrdu("ingredients", e.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="ur-faqs" className="a-label">
+              Questions and answers (Q: / A: blocks)
+            </label>
+            <textarea id="ur-faqs" className="a-textarea min-h-24" dir="rtl" lang="ur" value={form.urdu.faqs} onChange={(e) => setUrdu("faqs", e.target.value)} />
           </div>
         </section>
 
@@ -420,6 +623,8 @@ export function ProductForm({
                         min={0}
                         aria-label={`Stock for variant ${i + 1}`}
                         value={v.stock}
+                        disabled={form.isBundle}
+                        title={form.isBundle ? "Derived from the kit's parts" : undefined}
                         onChange={(e) => setVariant(i, { stock: e.target.value })}
                       />
                     </td>

@@ -28,7 +28,7 @@ export const COLLECTIONS: Record<Family, CollectionCopy> = {
     standfirst: "Four oils, pressed cold and bottled the way they came out of the press.",
     body: [
       "Most oil sold by weight in Pakistan has been heated, bleached and cut with something cheaper. Ours is not. Mustard seed is pressed cold so it keeps the sharp smell people recognise, coconut is filtered twice so it pours clear in winter, and the onion blend is rested a fortnight so the sulphur compounds actually move into the oil.",
-      "Use mustard oil weekly on the scalp for hair fall and dryness. Use coconut on damp ends and on skin straight after a bath. Use onion oil two or three times a week where hair has thinned. Desire Drop is a separate thing entirely, a warming massage oil for adults.",
+      "Use mustard oil weekly on the scalp for hair fall and dryness. Use coconut on damp ends and on skin straight after a bath. Use onion oil two or three times a week where hair has thinned. Josh is a separate thing entirely, a warming herbal massage oil for men.",
     ],
     ogLine: "Mustard, coconut and onion oils",
   },

@@ -18,7 +18,7 @@ export const FAMILIES: Record<Family, FamilyMeta> = {
     slug: "oils",
     name: "Oils",
     heading: "Hair and body oils",
-    blurb: "Cold-pressed mustard, coconut and onion oils for hair and skin, plus Desire Drop for adults.",
+    blurb: "Cold-pressed mustard, coconut and onion oils for hair and skin, plus Josh herbal massage oil for men.",
     band: "bg-band-oil",
     text: "text-band-oil-ink",
     border: "border-band-oil",

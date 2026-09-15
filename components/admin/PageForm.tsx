@@ -144,7 +144,7 @@ export function PageForm({ initial }: { initial: PageFormValues }) {
           </button>
           {form.id && form.status === "published" ? (
             <a href={`/${form.slug}`} target="_blank" rel="noopener" className="a-btn a-btn-xs w-full">
-              View on the storefront &nearr;
+              View on the storefront ↗
             </a>
           ) : null}
         </section>

@@ -14,6 +14,9 @@ import { DiscountField } from "@/components/cart/DiscountField";
 import { useCartQuote } from "@/components/cart/useCartQuote";
 import { CitySelect } from "./CitySelect";
 import { clientEventId, trackEvent } from "@/lib/analytics/client";
+import { FreeShippingBar } from "@/components/cart/FreeShippingBar";
+import { useLang } from "@/store/lang";
+import { CHECKOUT_COPY, DELIVERY_WINDOW_UR } from "@/lib/i18n/checkout";
 
 function Field({
   id,
@@ -47,8 +50,12 @@ function Field({
   );
 }
 
-export function CheckoutForm() {
+export function CheckoutForm({ paymentMethods, paymentNote }: { paymentMethods: string[]; paymentNote?: string }) {
   const router = useRouter();
+  const lang = useLang((s) => s.lang);
+  const t = CHECKOUT_COPY[lang];
+  const urdu = lang === "ur" ? "urdu" : "";
+  const deliveryWindow = lang === "ur" ? DELIVERY_WINDOW_UR : DELIVERY_WINDOW;
   const items = useCart((s) => s.items);
   const hydrated = useCart((s) => s.hydrated);
   const clear = useCart((s) => s.clear);
@@ -157,25 +164,25 @@ export function CheckoutForm() {
       }
       if (result.fieldErrors) setErrors(result.fieldErrors);
       if (result.removeVariantIds) result.removeVariantIds.forEach(remove);
-      setMessage(result.message ?? "Please check the form and try again.");
+      setMessage(result.message ?? t.checkFields);
     });
   }
 
-  if (!hydrated) return <p className="mt-6 text-ink-soft">Loading your cart.</p>;
+  if (!hydrated) return <p className={`mt-6 text-ink-soft ${urdu}`}>{t.loading}</p>;
 
   if (items.length === 0) {
     return (
-      <div className="card mt-6 max-w-xl p-6">
-        <p className="text-ink-soft">There is nothing to check out yet. Add a product first.</p>
+      <div className={`card mt-6 max-w-xl p-6 ${urdu}`} lang={lang}>
+        <p className="text-ink-soft">{t.empty}</p>
         <Link href="/products" className="btn btn-primary mt-4">
-          See all products
+          {t.seeAll}
         </Link>
       </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-6 grid gap-8 lg:grid-cols-[1fr_380px]">
+    <form onSubmit={onSubmit} noValidate className={`mt-6 grid gap-8 lg:grid-cols-[1fr_380px] ${urdu}`} lang={lang}>
       <div className="space-y-8">
         {message ? (
           <div role="alert" className="rounded border border-danger/40 bg-white px-4 py-3 text-sm text-danger">
@@ -185,8 +192,8 @@ export function CheckoutForm() {
 
         <fieldset className="card space-y-5 p-5 sm:p-6">
           <legend className="sr-only">Contact</legend>
-          <h2 className="text-lg">Contact</h2>
-          <Field id="fullName" label="Full name" error={errors.fullName}>
+          <h2 className="text-lg">{t.contact}</h2>
+          <Field id="fullName" label={t.fullName} error={errors.fullName}>
             <input
               id="fullName"
               name="fullName"
@@ -200,7 +207,7 @@ export function CheckoutForm() {
             />
           </Field>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field id="phone" label="Mobile number" error={errors.phone} hint="We call this number to confirm the order.">
+            <Field id="phone" label={t.phone} error={errors.phone} hint={t.phoneHint}>
               <input
                 id="phone"
                 name="phone"
@@ -216,7 +223,7 @@ export function CheckoutForm() {
                 required
               />
             </Field>
-            <Field id="altPhone" label="Alternate number (optional)" error={errors.altPhone}>
+            <Field id="altPhone" label={t.altPhone} error={errors.altPhone}>
               <input
                 id="altPhone"
                 name="altPhone"
@@ -235,9 +242,9 @@ export function CheckoutForm() {
 
         <fieldset className="card space-y-5 p-5 sm:p-6">
           <legend className="sr-only">Delivery address</legend>
-          <h2 className="text-lg">Delivery address</h2>
-          <CitySelect value={form.city} onChange={(v) => set("city", v)} error={errors.city} />
-          <Field id="address" label="Full address" error={errors.address} hint="House or flat, street, area, and any landmark.">
+          <h2 className="text-lg">{t.deliveryAddress}</h2>
+          <CitySelect value={form.city} onChange={(v) => set("city", v)} error={errors.city} label={t.city} hint={t.cityHint} placeholder={t.cityPlaceholder} />
+          <Field id="address" label={t.address} error={errors.address} hint={t.addressHint}>
             <textarea
               id="address"
               name="address"
@@ -250,14 +257,14 @@ export function CheckoutForm() {
               required
             />
           </Field>
-          <Field id="notes" label="Order notes (optional)" error={errors.notes}>
+          <Field id="notes" label={t.notes} error={errors.notes}>
             <textarea
               id="notes"
               name="notes"
               className="field min-h-20"
               value={form.notes}
               onChange={(e) => set("notes", e.target.value)}
-              placeholder="Delivery timing, gate instructions"
+              placeholder={t.notesPlaceholder}
             />
           </Field>
           {/* Honeypot: visually hidden and skipped by assistive tech. Bots fill it, people never see it. */}
@@ -270,7 +277,7 @@ export function CheckoutForm() {
 
       <aside className="card h-fit p-5 lg:sticky lg:top-24" aria-labelledby="order-summary-title">
         <h2 id="order-summary-title" className="text-lg">
-          Your order
+          {t.yourOrder}
         </h2>
         <ul className="mt-4 divide-y divide-rule">
           {items.map((i) => (
@@ -288,49 +295,57 @@ export function CheckoutForm() {
         </ul>
         <dl className="mt-3 space-y-2 border-t border-rule pt-3 text-sm">
           <div className="flex justify-between">
-            <dt className="text-ink-soft">Items ({count})</dt>
+            <dt className="text-ink-soft">
+              {t.items} ({count})
+            </dt>
             <dd className="tabular">{formatPKR(subtotal)}</dd>
           </div>
           {quote && quote.discountPaisa > 0 ? (
             <div className="flex justify-between text-band-care">
-              <dt>{quote.discount?.title ?? "Discount"}</dt>
+              <dt>{quote.discount?.title ?? t.discount}</dt>
               <dd className="tabular">&minus;{formatPKR(quote.discountPaisa)}</dd>
             </div>
           ) : null}
           <div className="flex justify-between">
-            <dt className="text-ink-soft">Delivery</dt>
+            <dt className="text-ink-soft">{t.delivery}</dt>
             <dd className="tabular">
-              {quote ? (quote.deliveryPaisa === 0 ? "Free" : formatPKR(quote.deliveryPaisa)) : "Calculating"}
+              {quote ? (quote.deliveryPaisa === 0 ? t.free : formatPKR(quote.deliveryPaisa)) : t.calculating}
             </dd>
           </div>
           <div className="flex justify-between border-t border-rule pt-3 text-base font-semibold">
-            <dt>Total</dt>
+            <dt>{t.total}</dt>
             <dd className="tabular">{quote ? formatPKR(quote.totalPaisa) : "—"}</dd>
           </div>
         </dl>
 
         <DiscountField code={discountCode} onApply={setDiscountCode} quote={quote} loading={quoting} />
 
+        <div className="mt-4">
+          <FreeShippingBar quote={quote} compact />
+        </div>
+
         {quote?.cityBlocked ? (
           <p role="alert" className="mt-3 rounded border border-danger/40 bg-white px-3 py-2 text-sm text-danger">
-            We do not deliver to {form.city} yet. Message us on WhatsApp and we will see what we can do.
+            {t.cityBlocked(form.city)}
           </p>
         ) : null}
 
         <div className="mt-4 rounded border border-band-care/40 bg-white p-3 text-sm">
-          <p className="font-medium text-band-care">Cash on delivery</p>
-          <p className="mt-1 text-ink-soft">
-            Pay <span className="tabular font-medium text-ink">{formatPKR(total)}</span> to the rider when your parcel arrives. Delivery takes {DELIVERY_WINDOW}.
+          <p className="font-medium text-band-care">{t.cod}</p>
+          <p className="mt-1 text-ink-soft">{t.codNote(formatPKR(total), deliveryWindow)}</p>
+          <p className="mt-2 text-xs text-ink-soft">
+            <span className="font-medium text-ink">{t.paymentMethods}:</span> {paymentMethods.join(" · ")}
+            {paymentNote ? <span className="block">{paymentNote}</span> : null}
           </p>
         </div>
 
         <button type="submit" className="btn btn-primary mt-5 w-full" disabled={pending || quote?.cityBlocked}>
-          {pending ? "Placing order" : "Place order"}
+          {pending ? t.placing : t.placeOrder}
         </button>
         <p className="mt-3 text-center text-xs text-ink-soft">
-          By placing an order you agree to our{" "}
+          {t.agree}{" "}
           <Link href="/shipping-returns" className="underline underline-offset-2">
-            delivery and returns terms
+            {t.terms}
           </Link>
           .
         </p>

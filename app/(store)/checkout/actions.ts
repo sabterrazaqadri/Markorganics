@@ -1,10 +1,12 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { eq, inArray } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, notInArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { discounts, orderEvents, orderItems, orders, productVariants, products } from "@/lib/db/schema";
+import { allocateBundlePrice, effectiveBundleStock, getBundleComponents, type ExpandedLine } from "@/lib/bundles";
+import { ORDER_TOKEN_TTL_SECONDS, orderCookieName, signOrderToken } from "@/lib/auth";
 import {
   checkoutSchema,
   issuesToFieldErrors,
@@ -60,9 +62,71 @@ export interface CartQuote {
   /** Set when a typed code was rejected; the cart keeps the code visible. */
   discountError: string | null;
   freeShippingRemainingPaisa: number;
+  freeShippingThresholdPaisa: number;
   cityBlocked: boolean;
   /** Variant ids that are gone or archived, so the cart can drop them. */
   staleVariantIds: string[];
+  /** Cheapest ways to reach free delivery, for the progress bar. */
+  suggestions: UpsellSuggestion[];
+}
+
+export interface UpsellSuggestion {
+  variantId: string;
+  productSlug: string;
+  productName: string;
+  variantLabel: string;
+  sku: string;
+  pricePaisa: number;
+  image: string;
+  stock: number;
+}
+
+/**
+ * Products that would carry the cart over the free-delivery line. Prefers the
+ * cheapest item that crosses it on its own, then the dearest ones below it.
+ * Bundles are left out: a bundle is a decision, not a top-up.
+ */
+async function freeShippingSuggestions(excludeVariantIds: string[], remainingPaisa: number, limit = 3): Promise<UpsellSuggestion[]> {
+  const rows = await db
+    .select({
+      variantId: productVariants.id,
+      productSlug: products.slug,
+      productName: products.name,
+      variantLabel: productVariants.label,
+      sku: productVariants.sku,
+      pricePaisa: productVariants.pricePaisa,
+      images: products.images,
+      stock: productVariants.stock,
+    })
+    .from(productVariants)
+    .innerJoin(products, eq(products.id, productVariants.productId))
+    .where(
+      and(
+        eq(products.status, "active"),
+        isNull(products.deletedAt),
+        isNull(productVariants.deletedAt),
+        eq(products.isBundle, false),
+        gt(productVariants.stock, 0),
+        excludeVariantIds.length ? notInArray(productVariants.id, excludeVariantIds) : undefined,
+      ),
+    )
+    .orderBy(asc(productVariants.pricePaisa));
+  // One variant per product, the cheapest, keeps the row from repeating a name.
+  const seen = new Set<string>();
+  const unique = rows.filter((r) => (seen.has(r.productSlug) ? false : (seen.add(r.productSlug), true)));
+  const crossing = unique.filter((r) => r.pricePaisa >= remainingPaisa);
+  const below = unique.filter((r) => r.pricePaisa < remainingPaisa).reverse();
+  const picked = [...crossing.slice(0, 2), ...below].slice(0, limit);
+  return picked.map((r) => ({
+    variantId: r.variantId,
+    productSlug: r.productSlug,
+    productName: r.productName,
+    variantLabel: r.variantLabel,
+    sku: r.sku,
+    pricePaisa: r.pricePaisa,
+    image: r.images[0] ?? "",
+    stock: r.stock,
+  }));
 }
 
 /**
@@ -85,8 +149,10 @@ export async function quoteCart(raw: QuoteInput): Promise<CartQuote> {
     discount: null,
     discountError: null,
     freeShippingRemainingPaisa: delivery.freeThresholdPaisa,
+    freeShippingThresholdPaisa: delivery.freeThresholdPaisa,
     cityBlocked: false,
     staleVariantIds: [],
+    suggestions: [],
   };
   if (data.items.length === 0) return empty;
 
@@ -135,6 +201,8 @@ export async function quoteCart(raw: QuoteInput): Promise<CartQuote> {
 
   const discountPaisa = applied?.amountPaisa ?? 0;
   const deliveryPaisa = applied?.freeDelivery ? 0 : baseDelivery;
+  const remaining = Math.max(0, delivery.freeThresholdPaisa - subtotal);
+  const suggestions = remaining > 0 && deliveryPaisa > 0 ? await freeShippingSuggestions([...wanted.keys()], remaining) : [];
 
   return {
     subtotalPaisa: subtotal,
@@ -146,9 +214,11 @@ export async function quoteCart(raw: QuoteInput): Promise<CartQuote> {
       ? { code: applied.code, title: applied.title, automatic: applied.code === null }
       : null,
     discountError,
-    freeShippingRemainingPaisa: Math.max(0, delivery.freeThresholdPaisa - subtotal),
+    freeShippingRemainingPaisa: remaining,
+    freeShippingThresholdPaisa: delivery.freeThresholdPaisa,
     cityBlocked: data.city ? isCityBlocked(delivery, data.city) : false,
     staleVariantIds: stale,
+    suggestions,
   };
 }
 
@@ -272,38 +342,65 @@ export async function placeOrder(raw: CheckoutInput): Promise<PlaceOrderResult> 
 
   try {
     const placed = await db.transaction(async (tx) => {
-      const rows = await tx
+      /* Pass one: what the cart says it holds. Bundle variants are read here
+         too, but only for their price and name; their stock is derived. */
+      const cartRows = await tx
         .select({
           id: productVariants.id,
           productId: products.id,
           sku: productVariants.sku,
           label: productVariants.label,
           pricePaisa: productVariants.pricePaisa,
-          stock: productVariants.stock,
           productName: products.name,
           productSlug: products.slug,
+          status: products.status,
+          isBundle: products.isBundle,
+        })
+        .from(productVariants)
+        .innerJoin(products, eq(products.id, productVariants.productId))
+        .where(inArray(productVariants.id, variantIds));
+      const cartById = new Map(cartRows.map((r) => [r.id, r]));
+
+      for (const variantId of wanted.keys()) {
+        const row = cartById.get(variantId);
+        if (!row || row.status !== "active") {
+          throw new StockError("An item in your cart is no longer available and has been removed.", variantId);
+        }
+      }
+
+      const bundleIds = cartRows.filter((r) => r.isBundle).map((r) => r.id);
+      const components = await getBundleComponents(tx, bundleIds);
+
+      /* Pass two: the real variants that will leave the shelf, locked. */
+      const need = new Map<string, number>();
+      for (const [variantId, quantity] of wanted) {
+        const row = cartById.get(variantId)!;
+        if (row.isBundle) {
+          const comps = components.get(variantId) ?? [];
+          if (comps.length === 0) throw new StockError(`${row.productName} is not available right now.`, variantId);
+          for (const c of comps) need.set(c.componentVariantId, (need.get(c.componentVariantId) ?? 0) + c.quantity * quantity);
+        } else {
+          need.set(variantId, (need.get(variantId) ?? 0) + quantity);
+        }
+      }
+
+      const stockRows = await tx
+        .select({
+          id: productVariants.id,
+          sku: productVariants.sku,
+          label: productVariants.label,
+          stock: productVariants.stock,
+          productName: products.name,
           status: products.status,
         })
         .from(productVariants)
         .innerJoin(products, eq(products.id, productVariants.productId))
-        .where(inArray(productVariants.id, variantIds))
+        .where(inArray(productVariants.id, [...need.keys()]))
         .for("update", { of: productVariants });
+      const stockById = new Map(stockRows.map((r) => [r.id, r]));
 
-      const byId = new Map(rows.map((r) => [r.id, r]));
-      const lines: {
-        variantId: string;
-        productId: string;
-        productSlug: string;
-        productName: string;
-        variantLabel: string;
-        sku: string;
-        unitPricePaisa: number;
-        quantity: number;
-        lineTotalPaisa: number;
-      }[] = [];
-
-      for (const [variantId, quantity] of wanted) {
-        const row = byId.get(variantId);
+      for (const [variantId, quantity] of need) {
+        const row = stockById.get(variantId);
         if (!row || row.status !== "active") {
           throw new StockError("An item in your cart is no longer available and has been removed.", variantId);
         }
@@ -314,16 +411,50 @@ export async function placeOrder(raw: CheckoutInput): Promise<PlaceOrderResult> 
               : `Only ${row.stock} of ${row.productName} ${row.label} left. Reduce the quantity to continue.`;
           throw new StockError(msg, row.stock === 0 ? variantId : undefined);
         }
-        lines.push({
-          variantId,
-          productId: row.productId,
-          productSlug: row.productSlug,
-          productName: row.productName,
-          variantLabel: row.label,
-          sku: row.sku,
-          unitPricePaisa: row.pricePaisa,
-          quantity,
-          lineTotalPaisa: row.pricePaisa * quantity,
+      }
+
+      /* The lines that go on the order: bundles expanded, everything else as is. */
+      const lines: (ExpandedLine & { lineTotalPaisa: number })[] = [];
+      for (const [variantId, quantity] of wanted) {
+        const row = cartById.get(variantId)!;
+        if (!row.isBundle) {
+          lines.push({
+            variantId,
+            productId: row.productId,
+            productSlug: row.productSlug,
+            productName: row.productName,
+            variantLabel: row.label,
+            sku: row.sku,
+            unitPricePaisa: row.pricePaisa,
+            quantity,
+            lineTotalPaisa: row.pricePaisa * quantity,
+            bundleSku: null,
+            bundleName: null,
+          });
+          continue;
+        }
+        const comps = components.get(variantId) ?? [];
+        // Guard against a component that went out of stock between the two reads.
+        const live = comps.map((c) => ({ ...c, stock: stockById.get(c.componentVariantId)?.stock ?? 0 }));
+        if (effectiveBundleStock(live) < quantity) {
+          throw new StockError(`${row.productName} just sold out. Remove it to continue.`, variantId);
+        }
+        const units = allocateBundlePrice(row.pricePaisa, comps);
+        comps.forEach((c, i) => {
+          const q = c.quantity * quantity;
+          lines.push({
+            variantId: c.componentVariantId,
+            productId: c.productId,
+            productSlug: c.productSlug,
+            productName: c.productName,
+            variantLabel: c.label,
+            sku: c.sku,
+            unitPricePaisa: units[i],
+            quantity: q,
+            lineTotalPaisa: units[i] * q,
+            bundleSku: row.sku,
+            bundleName: `${row.productName} ${row.label}`.trim(),
+          });
         });
       }
 
@@ -334,13 +465,13 @@ export async function placeOrder(raw: CheckoutInput): Promise<PlaceOrderResult> 
          and first-time conditions can be evaluated against it. */
       const customerId = await upsertCustomer(tx, { phone: data.phone, name: data.fullName, city: data.city });
 
+      /* Discounts are judged on what the customer chose, so a bundle counts as
+         the bundle product (already discounted), not as its parts. */
       const discountCtx = {
-        lines: lines.map((l) => ({
-          variantId: l.variantId,
-          productId: l.productId,
-          unitPricePaisa: l.unitPricePaisa,
-          quantity: l.quantity,
-        })),
+        lines: [...wanted].map(([variantId, quantity]) => {
+          const row = cartById.get(variantId)!;
+          return { variantId, productId: row.productId, unitPricePaisa: row.pricePaisa, quantity };
+        }),
         subtotalPaisa: subtotal,
         deliveryPaisa: baseDelivery,
         phone: data.phone,
@@ -407,6 +538,8 @@ export async function placeOrder(raw: CheckoutInput): Promise<PlaceOrderResult> 
           unitPricePaisa: l.unitPricePaisa,
           quantity: l.quantity,
           lineTotalPaisa: l.lineTotalPaisa,
+          bundleSku: l.bundleSku,
+          bundleName: l.bundleName,
         })),
       );
 
@@ -415,7 +548,7 @@ export async function placeOrder(raw: CheckoutInput): Promise<PlaceOrderResult> 
           variantId: line.variantId,
           delta: -line.quantity,
           reason: "sale",
-          note: `Order ${number}`,
+          note: line.bundleName ? `Order ${number} (${line.bundleName})` : `Order ${number}`,
           orderId: order.id,
         });
       }
@@ -442,6 +575,21 @@ export async function placeOrder(raw: CheckoutInput): Promise<PlaceOrderResult> 
 
       return { id: order.id, number };
     });
+
+    /* The browser that placed the order may add to it for the next hour. */
+    try {
+      const expiresAt = Math.floor(Date.now() / 1000) + ORDER_TOKEN_TTL_SECONDS;
+      const jar = await cookies();
+      jar.set(orderCookieName(placed.number), await signOrderToken(placed.id, expiresAt), {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: ORDER_TOKEN_TTL_SECONDS,
+      });
+    } catch (err) {
+      console.error("could not set the order cookie", err);
+    }
 
     // Stock and reports changed: refresh every cached surface.
     revalidatePath("/");

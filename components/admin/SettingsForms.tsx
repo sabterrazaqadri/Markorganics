@@ -81,6 +81,28 @@ export function StoreSettingsForm({ initial, canWrite }: { initial: StoreSetting
             <input id="s-tz" className="a-input" value={form.timezone} disabled onChange={() => {}} />
             <p className="a-hint">Every date in the admin is shown in Asia/Karachi.</p>
           </div>
+          <div className="sm:col-span-2">
+            <span className="a-label">Payment methods shown to customers</span>
+            <p className="a-hint mb-1">Cash on delivery is always on. Turn the others on only once the account is live.</p>
+            <div className="flex flex-wrap gap-4 text-[12.5px]">
+              <label className="flex items-center gap-1.5">
+                <input type="checkbox" checked disabled /> Cash on delivery
+              </label>
+              <label className="flex items-center gap-1.5">
+                <input type="checkbox" checked={form.acceptJazzcash} disabled={!canWrite} onChange={(e) => set("acceptJazzcash", e.target.checked)} /> JazzCash
+              </label>
+              <label className="flex items-center gap-1.5">
+                <input type="checkbox" checked={form.acceptEasypaisa} disabled={!canWrite} onChange={(e) => set("acceptEasypaisa", e.target.checked)} /> EasyPaisa
+              </label>
+              <label className="flex items-center gap-1.5">
+                <input type="checkbox" checked={form.acceptBankTransfer} disabled={!canWrite} onChange={(e) => set("acceptBankTransfer", e.target.checked)} /> Bank transfer
+              </label>
+            </div>
+            <label htmlFor="s-paynote" className="a-label mt-2">
+              Payment note
+            </label>
+            <input id="s-paynote" className="a-input" value={form.paymentNote} disabled={!canWrite} placeholder="e.g. JazzCash 0300 1234567, account title MARKORGANICS" onChange={(e) => set("paymentNote", e.target.value)} />
+          </div>
         </div>
         {canWrite ? (
           <div className="border-t border-[var(--a-border)] p-3">

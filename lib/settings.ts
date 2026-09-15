@@ -26,6 +26,12 @@ export interface StoreSettings {
   currency: string;
   timezone: string;
   orderNumberPrefix: string;
+  /** Advance-payment options shown next to COD. Off until the accounts exist. */
+  acceptJazzcash: boolean;
+  acceptEasypaisa: boolean;
+  acceptBankTransfer: boolean;
+  /** Free text under the payment list, e.g. the account title and number. */
+  paymentNote: string;
 }
 
 export interface CityRate {
@@ -74,6 +80,10 @@ export const DEFAULT_SETTINGS: AllSettings = {
     currency: "PKR",
     timezone: "Asia/Karachi",
     orderNumberPrefix: ORDER_NUMBER_PREFIX,
+    acceptJazzcash: false,
+    acceptEasypaisa: false,
+    acceptBankTransfer: false,
+    paymentNote: "",
   },
   delivery: {
     flatRatePaisa: DELIVERY_FEE_PAISA,
@@ -175,6 +185,15 @@ export function deliveryFeeWith(
     if (match) return Math.max(0, match.feePaisa);
   }
   return delivery.flatRatePaisa;
+}
+
+/** Human-readable payment options, COD first, from the store settings. */
+export function paymentMethodsOf(store: StoreSettings): string[] {
+  const list = ["Cash on delivery"];
+  if (store.acceptJazzcash) list.push("JazzCash");
+  if (store.acceptEasypaisa) list.push("EasyPaisa");
+  if (store.acceptBankTransfer) list.push("Bank transfer");
+  return list;
 }
 
 export function isCityBlocked(delivery: DeliverySettings, city: string): boolean {

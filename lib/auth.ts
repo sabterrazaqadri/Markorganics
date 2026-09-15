@@ -56,6 +56,37 @@ export function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+/* ------------------------------------------------------- order edit token */
+
+/**
+ * Lets the browser that just placed an order add to it for a short while.
+ *
+ * Cookie name: mrk_o_<orderNumber>. Value: <orderId>.<expiresAtUnixSeconds>.<hmac>.
+ * The order number alone is not a secret worth trusting for a mutation, so
+ * the cookie is what the post-purchase upsell checks.
+ */
+export const ORDER_TOKEN_TTL_SECONDS = 60 * 60; // 1 hour
+
+export function orderCookieName(orderNumber: string): string {
+  return `mrk_o_${orderNumber.replace(/[^A-Za-z0-9]/g, "")}`;
+}
+
+export async function signOrderToken(orderId: string, expiresAt: number): Promise<string> {
+  const payload = `${orderId}.${expiresAt}`;
+  return `${payload}.${await hmac(`order:${payload}`)}`;
+}
+
+export async function verifyOrderToken(value: string | undefined | null, orderId: string): Promise<boolean> {
+  if (!value) return false;
+  const parts = value.split(".");
+  if (parts.length !== 3) return false;
+  const [id, expStr, sig] = parts;
+  const expiresAt = Number(expStr);
+  if (id !== orderId || !Number.isFinite(expiresAt) || expiresAt * 1000 < Date.now()) return false;
+  const expected = await hmac(`order:${id}.${expiresAt}`);
+  return timingSafeEqual(expected, sig);
+}
+
 export async function signSessionCookie(sessionId: string, expiresAt: number): Promise<string> {
   const payload = `${sessionId}.${expiresAt}`;
   const sig = await hmac(payload);
