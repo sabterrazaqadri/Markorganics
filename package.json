@@ -1,5 +1,5 @@
 {
-  "name": "markorganics",
+  "name": "markorganic",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -20,6 +20,7 @@
     "db:seed-admin": "tsx scripts/seed-admin.ts",
     "db:seed-storefront": "tsx scripts/seed-storefront.ts",
     "db:seed-blog": "tsx scripts/seed-blog.ts",
+    "db:rename-brand": "tsx scripts/rename-brand.ts",
     "test": "tsx tests/run.ts"
   },
   "dependencies": {

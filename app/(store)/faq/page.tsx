@@ -5,7 +5,7 @@ import { formatPKR } from "@/lib/money";
 
 export const metadata: Metadata = {
   title: "FAQ",
-  description: "Answers about delivery, cash on delivery, returns and how to use MARKORGANICS products.",
+  description: "Answers about delivery, cash on delivery, returns and how to use MARKORGANIC products.",
   alternates: { canonical: "/faq" },
 };
 

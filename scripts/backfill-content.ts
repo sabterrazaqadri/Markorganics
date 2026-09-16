@@ -15,7 +15,7 @@ export interface SeedPage {
   isSystem: boolean;
 }
 
-const about = `MARKORGANICS is a small Karachi company that makes the products a household actually uses every week: hair oil, a balm for headaches and sore muscles, and neel for the laundry. Nothing on this site is a luxury item, and none of it is priced like one.
+const about = `MARKORGANIC is a small Karachi company that makes the products a household actually uses every week: hair oil, a balm for headaches and sore muscles, and neel for the laundry. Nothing on this site is a luxury item, and none of it is priced like one.
 
 ## How we make things
 The oils are cold-pressed in small batches and filtered, not refined. The balms follow formulas that have been used in Pakistani homes for decades. The neel is a liquid so it mixes properly. Where a product can be a single ingredient, it is.
@@ -46,7 +46,7 @@ const privacy = `This page explains what we collect and why. It is short because
 Your delivery details are shared with the courier that delivers your parcel and with nobody else. We do not sell or rent customer information.
 
 ## How long we keep it
-Order records are kept for accounting. Ask us to delete your details at any time by emailing hello@markorganics.pk.`;
+Order records are kept for accounting. Ask us to delete your details at any time by emailing hello@markorganic.com.`;
 
 const shipping = `## Delivery
 - We deliver to every city and town in Pakistan through courier partners.
@@ -98,16 +98,16 @@ Repeatedly refusing confirmed parcels costs us the courier charge both ways. We 
 We describe what is in each product as accurately as we can. Nothing sold here is a medicine, and none of it is a substitute for advice from a doctor. Patch-test before first use, and keep everything away from the eyes and out of reach of children.
 
 ## Contact
-Questions about these terms: hello@markorganics.pk.`;
+Questions about these terms: hello@markorganic.com.`;
 
 export const SEED_PAGES: SeedPage[] = [
   {
     slug: "about",
-    title: "About MARKORGANICS",
+    title: "About MARKORGANIC",
     body: about,
     seoTitle: "About",
     seoDescription:
-      "MARKORGANICS makes everyday oils, balms and laundry blue for Pakistani homes. Honest ingredients, honest prices.",
+      "MARKORGANIC makes everyday oils, balms and laundry blue for Pakistani homes. Honest ingredients, honest prices.",
     isSystem: true,
   },
   {
@@ -115,7 +115,7 @@ export const SEED_PAGES: SeedPage[] = [
     title: "Privacy",
     body: privacy,
     seoTitle: "Privacy",
-    seoDescription: "What MARKORGANICS collects when you order, and how it is used.",
+    seoDescription: "What MARKORGANIC collects when you order, and how it is used.",
     isSystem: true,
   },
   {
@@ -123,7 +123,7 @@ export const SEED_PAGES: SeedPage[] = [
     title: "Shipping and returns",
     body: shipping,
     seoTitle: "Shipping and returns",
-    seoDescription: "Delivery charges, delivery times and the return policy for MARKORGANICS orders.",
+    seoDescription: "Delivery charges, delivery times and the return policy for MARKORGANIC orders.",
     isSystem: true,
   },
   {
@@ -131,7 +131,7 @@ export const SEED_PAGES: SeedPage[] = [
     title: "Refund policy",
     body: refund,
     seoTitle: "Refund policy",
-    seoDescription: "When MARKORGANICS replaces an item, when we refund, and how the money reaches you.",
+    seoDescription: "When MARKORGANIC replaces an item, when we refund, and how the money reaches you.",
     isSystem: true,
   },
   {
@@ -139,7 +139,7 @@ export const SEED_PAGES: SeedPage[] = [
     title: "Terms of service",
     body: terms,
     seoTitle: "Terms of service",
-    seoDescription: "The terms of buying from MARKORGANICS: ordering, cash on delivery, stock and refusals.",
+    seoDescription: "The terms of buying from MARKORGANIC: ordering, cash on delivery, stock and refusals.",
     isSystem: true,
   },
 ];

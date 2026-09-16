@@ -7,7 +7,7 @@ export const revalidate = 3600;
 export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata("privacy", {
     title: "Privacy",
-    description: "What MARKORGANICS collects when you order, and how it is used.",
+    description: "What MARKORGANIC collects when you order, and how it is used.",
   });
 }
 

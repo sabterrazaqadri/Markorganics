@@ -3,7 +3,7 @@ import { TrackForm } from "@/components/order/TrackForm";
 
 export const metadata: Metadata = {
   title: "Track your order",
-  description: "Check the status of your MARKORGANICS order with your order number and phone number.",
+  description: "Check the status of your MARKORGANIC order with your order number and phone number.",
   alternates: { canonical: "/track" },
 };
 

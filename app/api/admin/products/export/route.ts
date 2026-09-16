@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${template ? "markorganics-product-template" : `markorganics-products-${stamp}`}.csv"`,
+      "Content-Disposition": `attachment; filename="${template ? "markorganic-product-template" : `markorganic-products-${stamp}`}.csv"`,
       "Cache-Control": "no-store",
     },
   });

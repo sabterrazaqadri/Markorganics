@@ -42,9 +42,9 @@ export function Hero({ featured, rating, soldLast30Days = 0 }: Props) {
       <div className="container-x relative grid items-center gap-8 py-8 md:grid-cols-2 md:gap-12 md:py-14 lg:py-20">
         <div className="order-2 md:order-1">
           <p className="font-display text-sm font-semibold tracking-tight text-ink-soft">
-            <span className="lang-en">MARKORGANICS · Herbal massage oil for men</span>
+            <span className="lang-en">MARKORGANIC · Herbal massage oil for men</span>
             <span className="lang-ur urdu" lang="ur">
-              مارک آرگینکس · مردوں کے لیے ہربل مساج آئل
+              مارک آرگینک · مردوں کے لیے ہربل مساج آئل
             </span>
           </p>
           <h1 id="hero-title" className="mt-3 text-4xl sm:text-5xl lg:text-[3.5rem]">
@@ -176,7 +176,7 @@ function BrandHero() {
   return (
     <section className="container-x grid items-center gap-8 py-10 md:grid-cols-2 md:gap-12 md:py-16 lg:py-20" aria-labelledby="hero-title">
       <div className="order-2 md:order-1">
-        <p className="font-display text-sm font-semibold tracking-tight text-ink-soft">MARKORGANICS</p>
+        <p className="font-display text-sm font-semibold tracking-tight text-ink-soft">MARKORGANIC</p>
         <h1 id="hero-title" className="mt-3 text-4xl sm:text-5xl lg:text-[3.5rem]">
           Honest oils, balms and neel for every Pakistani home.
         </h1>

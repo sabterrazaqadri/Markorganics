@@ -101,7 +101,7 @@ export function StoreSettingsForm({ initial, canWrite }: { initial: StoreSetting
             <label htmlFor="s-paynote" className="a-label mt-2">
               Payment note
             </label>
-            <input id="s-paynote" className="a-input" value={form.paymentNote} disabled={!canWrite} placeholder="e.g. JazzCash 0300 1234567, account title MARKORGANICS" onChange={(e) => set("paymentNote", e.target.value)} />
+            <input id="s-paynote" className="a-input" value={form.paymentNote} disabled={!canWrite} placeholder="e.g. JazzCash 0300 1234567, account title MARKORGANIC" onChange={(e) => set("paymentNote", e.target.value)} />
           </div>
         </div>
         {canWrite ? (
@@ -319,7 +319,7 @@ export function TemplateForm({ template, canWrite }: { template: TemplateRow; ca
     .replace(/\{\{total\}\}/g, "Rs 1,450")
     .replace(/\{\{city\}\}/g, "Karachi")
     .replace(/\{\{status\}\}/g, "confirmed")
-    .replace(/\{\{store_name\}\}/g, "MARKORGANICS");
+    .replace(/\{\{store_name\}\}/g, "MARKORGANIC");
 
   return (
     <Card title={template.name}>

@@ -19,7 +19,7 @@ export function BrandStory() {
           Made for the shelf, not the shop window.
         </h2>
         <p className="mt-4 text-ink-soft">
-          MARKORGANICS started with one mustard oil, pressed the old way and sold to neighbours in Karachi. The range has
+          MARKORGANIC started with one mustard oil, pressed the old way and sold to neighbours in Karachi. The range has
           grown, but the rule has not: single ingredients where possible, honest prices, and a label you can read.
         </p>
         <p className="mt-3 text-ink-soft">

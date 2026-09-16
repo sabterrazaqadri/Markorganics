@@ -231,11 +231,11 @@ async function backfillContent() {
         "",
         "Twice a week is plenty. If your scalp is irritated, patch-test on the forearm first and stop if it stings.",
       ].join("\n"),
-      authorName: "MARKORGANICS",
+      authorName: "MARKORGANIC",
       tags: ["hair", "how to"],
       status: "published",
       publishedAt: new Date(),
-      seoDescription: "A simple weekly mustard oil routine for hair fall and dry scalp, from MARKORGANICS.",
+      seoDescription: "A simple weekly mustard oil routine for hair fall and dry scalp, from MARKORGANIC.",
     });
     done("one starter post created");
   } else {
@@ -270,7 +270,7 @@ async function backfillMedia() {
 /* -------------------------------------------------------------------- run */
 
 async function main() {
-  console.log("Backfilling MARKORGANICS admin data\n");
+  console.log("Backfilling MARKORGANIC admin data\n");
   await backfillCustomers();
   await backfillOrderCounts();
   await backfillProducts();

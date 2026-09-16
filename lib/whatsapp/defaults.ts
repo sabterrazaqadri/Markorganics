@@ -22,7 +22,7 @@ export const DEFAULT_WHATSAPP_TEMPLATES: DefaultTemplate[] = [
     language: "en",
     category: "utility",
     trigger: "order_placed",
-    body: "Assalam o Alaikum {{1}}, thank you for your order {{2}} from MARKORGANICS. Total {{3}}, cash on delivery. We will call to confirm shortly.",
+    body: "Assalam o Alaikum {{1}}, thank you for your order {{2}} from MARKORGANIC. Total {{3}}, cash on delivery. We will call to confirm shortly.",
     variables: ["customer_name", "order_number", "order_total"],
   },
   {
@@ -30,7 +30,7 @@ export const DEFAULT_WHATSAPP_TEMPLATES: DefaultTemplate[] = [
     language: "en",
     category: "utility",
     trigger: "order_confirmed",
-    body: "Your MARKORGANICS order {{1}} is confirmed. Total {{2}}, cash on delivery. We will hand it to the courier shortly.",
+    body: "Your MARKORGANIC order {{1}} is confirmed. Total {{2}}, cash on delivery. We will hand it to the courier shortly.",
     variables: ["order_number", "order_total"],
   },
   {
@@ -38,7 +38,7 @@ export const DEFAULT_WHATSAPP_TEMPLATES: DefaultTemplate[] = [
     language: "en",
     category: "utility",
     trigger: "order_shipped",
-    body: "Good news {{1}} — your MARKORGANICS order {{2}} has shipped with {{3}}. Track it here: {{4}}",
+    body: "Good news {{1}} — your MARKORGANIC order {{2}} has shipped with {{3}}. Track it here: {{4}}",
     variables: ["customer_name", "order_number", "courier_name", "tracking_url"],
   },
   {
@@ -46,7 +46,7 @@ export const DEFAULT_WHATSAPP_TEMPLATES: DefaultTemplate[] = [
     language: "en",
     category: "utility",
     trigger: "out_for_delivery",
-    body: "Your MARKORGANICS order {{1}} is out for delivery today. Please keep {{2}} ready for the rider.",
+    body: "Your MARKORGANIC order {{1}} is out for delivery today. Please keep {{2}} ready for the rider.",
     variables: ["order_number", "order_total"],
   },
   {
@@ -54,7 +54,7 @@ export const DEFAULT_WHATSAPP_TEMPLATES: DefaultTemplate[] = [
     language: "en",
     category: "utility",
     trigger: "order_delivered",
-    body: "Your MARKORGANICS order {{1}} has been delivered. Thank you, {{2}}. If anything is wrong, reply to this message and we will fix it.",
+    body: "Your MARKORGANIC order {{1}} has been delivered. Thank you, {{2}}. If anything is wrong, reply to this message and we will fix it.",
     variables: ["order_number", "customer_name"],
   },
   {
@@ -62,7 +62,7 @@ export const DEFAULT_WHATSAPP_TEMPLATES: DefaultTemplate[] = [
     language: "en",
     category: "utility",
     trigger: "order_cancelled",
-    body: "Your MARKORGANICS order {{1}} has been cancelled. If this was a mistake, reply here and we will place it again.",
+    body: "Your MARKORGANIC order {{1}} has been cancelled. If this was a mistake, reply here and we will place it again.",
     variables: ["order_number"],
   },
   {
@@ -70,7 +70,7 @@ export const DEFAULT_WHATSAPP_TEMPLATES: DefaultTemplate[] = [
     language: "en",
     category: "marketing",
     trigger: "abandoned_checkout",
-    body: "Assalam o Alaikum {{1}}, you left {{2}} in your MARKORGANICS cart. Cash on delivery across Pakistan — finish here: {{3}}",
+    body: "Assalam o Alaikum {{1}}, you left {{2}} in your MARKORGANIC cart. Cash on delivery across Pakistan — finish here: {{3}}",
     variables: ["customer_name", "cart_summary", "checkout_url"],
   },
 ];

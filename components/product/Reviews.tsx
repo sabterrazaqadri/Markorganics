@@ -85,7 +85,7 @@ export function Reviews({ productSlug, summary, reviews }: { productSlug: string
               <p className="mt-1 whitespace-pre-line text-ink-soft">{r.body}</p>
               {r.reply ? (
                 <div className="mt-3 border-l-2 border-band-oil pl-3 text-sm">
-                  <p className="font-medium">{r.lang === "ur" ? "مارک آرگینکس کا جواب" : "Reply from MARKORGANICS"}</p>
+                  <p className="font-medium">{r.lang === "ur" ? "مارک آرگینک کا جواب" : "Reply from MARKORGANIC"}</p>
                   <p className="text-ink-soft">{r.reply}</p>
                 </div>
               ) : null}

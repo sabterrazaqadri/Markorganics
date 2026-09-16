@@ -59,13 +59,13 @@ export async function GET(req: Request) {
     rows.push([d.title, d.code ?? "automatic", d.uses, paisaToDecimal(d.discountedPaisa), paisaToDecimal(d.revenuePaisa)]);
   }
 
-  const csv = toCsv([`MARKORGANICS analytics — ${report.period.label}`, "", "", ""], rows);
+  const csv = toCsv([`MARKORGANIC analytics — ${report.period.label}`, "", "", ""], rows);
   const stamp = new Date().toISOString().slice(0, 10);
 
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="markorganics-analytics-${stamp}.csv"`,
+      "Content-Disposition": `attachment; filename="markorganic-analytics-${stamp}.csv"`,
       "Cache-Control": "no-store",
     },
   });

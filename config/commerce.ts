@@ -6,11 +6,11 @@ export const DELIVERY_FEE_PAISA = 200 * 100; // Rs 200 flat
 export const FREE_SHIPPING_THRESHOLD_PAISA = 2000 * 100; // free delivery at Rs 2,000 and above
 
 export const CURRENCY = "PKR" as const;
-export const BRAND_NAME = "MARKORGANICS";
+export const BRAND_NAME = "MARKORGANIC";
 export const BRAND_SHORT = "MARK";
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 export const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "923001234567";
-export const SUPPORT_EMAIL = "hello@markorganics.pk";
+export const SUPPORT_EMAIL = "hello@markorganic.com";
 
 /** Stock at or below this number shows a low-stock warning in admin. */
 export const LOW_STOCK_THRESHOLD = 5;

@@ -1,6 +1,6 @@
-# MARKORGANICS storefront
+# MARKORGANIC storefront
 
-Cash-on-delivery e-commerce storefront and admin panel for MARKORGANICS, built with Next.js 15 (App Router), Tailwind CSS v4, Neon Postgres and Drizzle ORM.
+Cash-on-delivery e-commerce storefront and admin panel for MARKORGANIC, built with Next.js 15 (App Router), Tailwind CSS v4, Neon Postgres and Drizzle ORM.
 
 ## Stack
 
@@ -42,6 +42,7 @@ npm run db:backfill    # derive customers, ledger, pages, menus and settings fro
 npm run db:seed-admin  # create the first Owner from ADMIN_EMAIL / ADMIN_PASSWORD
 npm run db:seed-storefront  # FAQ pairs, Urdu copy and the three kits (idempotent; --reset overwrites edited copy)
 npm run db:seed-blog        # ten journal posts plus their Urdu versions (idempotent; --reset overwrites edits)
+npm run db:rename-brand     # one-off: updates a live `settings` row still named MARKORGANICS to MARKORGANIC
 npm run db:studio      # optional: browse data with drizzle-kit studio
 ```
 

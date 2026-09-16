@@ -28,7 +28,7 @@ export async function GET() {
   return new Response(JSON.stringify(backup, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Content-Disposition": `attachment; filename="markorganics-backup-${stamp}.json"`,
+      "Content-Disposition": `attachment; filename="markorganic-backup-${stamp}.json"`,
       "Cache-Control": "no-store",
     },
   });

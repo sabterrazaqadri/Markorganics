@@ -113,11 +113,11 @@ async function main() {
   await toJpg(story, path.join(PUBLIC, "brand-story.jpg"));
 
   // Logo wordmark SVG.
-  const logo = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="32" viewBox="0 0 180 32" role="img" aria-label="MARKORGANICS">
+  const logo = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="32" viewBox="0 0 180 32" role="img" aria-label="MARKORGANIC">
   <rect x="0" y="4" width="6" height="24" fill="${FAMILIES.oils.hex}"/>
   <rect x="8" y="4" width="6" height="24" fill="${FAMILIES.relief.hex}"/>
   <rect x="16" y="4" width="6" height="24" fill="${FAMILIES.home.hex}"/>
-  <text x="30" y="23" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="19" letter-spacing="-0.5" fill="${INK}">MARKORGANICS</text>
+  <text x="30" y="23" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="19" letter-spacing="-0.5" fill="${INK}">MARKORGANIC</text>
 </svg>`;
   await writeFile(path.join(PUBLIC, "logo.svg"), logo);
 

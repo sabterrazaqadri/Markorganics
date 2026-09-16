@@ -113,7 +113,7 @@ export async function testConnection(): Promise<{ ok: boolean; message: string; 
     query: { fields: "name,id", access_token: creds.values.accessToken },
     secrets: [creds.values.accessToken].filter(Boolean),
     dryRun: creds.dryRun,
-    dryRunResponse: () => ({ id: pixelId, name: "MARKORGANICS pixel (dry run)" }),
+    dryRunResponse: () => ({ id: pixelId, name: "MARKORGANIC pixel (dry run)" }),
   });
 
   return result.ok

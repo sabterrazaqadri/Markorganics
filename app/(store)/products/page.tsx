@@ -9,7 +9,7 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   title: "All products",
   description:
-    "Every MARKORGANICS product on one page: hair and body oils, pain relief balms and liquid neel. Cash on delivery across Pakistan.",
+    "Every MARKORGANIC product on one page: hair and body oils, pain relief balms and liquid neel. Cash on delivery across Pakistan.",
   alternates: { canonical: "/products" },
 };
 

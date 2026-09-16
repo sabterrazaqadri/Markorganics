@@ -91,7 +91,7 @@ export function csvTemplate(): string {
         "oils",
         "active",
         "Hair oil",
-        "MARKORGANICS",
+        "MARKORGANIC",
         "hair|winter",
         "Sharp, unrefined, pressed cold.",
         "A longer description of at least twenty characters goes here.",

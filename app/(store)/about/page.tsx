@@ -9,15 +9,15 @@ export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata("about", {
     title: "About",
     description:
-      "MARKORGANICS makes everyday oils, balms and laundry blue for Pakistani homes. Honest ingredients, honest prices.",
+      "MARKORGANIC makes everyday oils, balms and laundry blue for Pakistani homes. Honest ingredients, honest prices.",
   });
 }
 
 export default function AboutPage() {
   return (
-    <PageBody slug="about" fallbackTitle="About MARKORGANICS">
+    <PageBody slug="about" fallbackTitle="About MARKORGANIC">
       <p>
-        MARKORGANICS is a small Karachi company that makes the products a household actually uses every week: hair oil,
+        MARKORGANIC is a small Karachi company that makes the products a household actually uses every week: hair oil,
         a balm for headaches and sore muscles, and neel for the laundry. Nothing on this site is a luxury item, and none
         of it is priced like one.
       </p>

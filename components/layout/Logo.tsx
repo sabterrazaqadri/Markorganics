@@ -9,7 +9,7 @@ export function Logo({ className = "" }: { className?: string }) {
         <span className="block h-6 w-1.5 bg-band-care" />
         <span className="block h-6 w-1.5 bg-band-home" />
       </span>
-      <span className="font-display text-lg font-bold tracking-tight">MARKORGANICS</span>
+      <span className="font-display text-lg font-bold tracking-tight">{BRAND_NAME}</span>
     </Link>
   );
 }

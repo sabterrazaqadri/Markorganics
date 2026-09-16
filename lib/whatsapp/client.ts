@@ -320,7 +320,7 @@ export async function testConnection(): Promise<{ ok: boolean; message: string; 
     dryRun: c.creds.dryRun,
     dryRunResponse: () => ({
       display_phone_number: "+92 300 0000000",
-      verified_name: "MARKORGANICS (dry run)",
+      verified_name: "MARKORGANIC (dry run)",
       quality_rating: "GREEN",
     }),
   });

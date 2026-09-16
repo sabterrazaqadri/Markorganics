@@ -3,7 +3,7 @@ import { FAMILIES, FAMILY_ORDER, isFamily } from "@/lib/catalog";
 import { COLLECTIONS } from "@/lib/collections";
 import { BRAND_NAME } from "@/config/commerce";
 
-export const alt = "MARKORGANICS collection";
+export const alt = "MARKORGANIC collection";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

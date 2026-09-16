@@ -5,7 +5,7 @@ import { WhatsAppLink } from "@/components/analytics/WhatsAppLink";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Reach MARKORGANICS on WhatsApp or email for order questions, wholesale and feedback.",
+  description: "Reach MARKORGANIC on WhatsApp or email for order questions, wholesale and feedback.",
   alternates: { canonical: "/contact" },
 };
 

@@ -31,7 +31,7 @@ async function main() {
       seoDescription: post.seoDescription,
       lang: post.lang,
       translationSlug: post.translationSlug,
-      authorName: "MARKORGANICS",
+      authorName: "MARKORGANIC",
       status: "published" as const,
       updatedAt: new Date(),
     };

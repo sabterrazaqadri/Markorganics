@@ -9,7 +9,7 @@ export const revalidate = 3600;
 export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata("shipping-returns", {
     title: "Shipping and returns",
-    description: "Delivery charges, delivery times and the return policy for MARKORGANICS orders.",
+    description: "Delivery charges, delivery times and the return policy for MARKORGANIC orders.",
   });
 }
 

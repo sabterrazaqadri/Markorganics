@@ -89,7 +89,7 @@ export async function GET(req: Request) {
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="markorganics-orders-${stamp}.csv"`,
+      "Content-Disposition": `attachment; filename="markorganic-orders-${stamp}.csv"`,
       "Cache-Control": "no-store",
     },
   });
