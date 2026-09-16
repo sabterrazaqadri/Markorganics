@@ -3,9 +3,7 @@ import localFont from "next/font/local";
 import { BRAND_NAME, SITE_URL } from "@/config/commerce";
 import { ToastViewport } from "@/components/ui/Toast";
 import { CartHydration } from "@/components/cart/CartHydration";
-import { Analytics } from "@/components/analytics/Analytics";
 import { getStorefrontIntegrations } from "@/lib/integrations/config";
-import { DEFAULT_SETTINGS, getIntegrationSettings } from "@/lib/settings";
 import { LangScript } from "@/components/i18n/LangScript";
 import "./globals.css";
 
@@ -60,9 +58,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * The root layout is the one place every page passes through, so it must not
- * be able to fail. A database that is momentarily unreachable should cost the
- * shop its pixels, never its storefront.
+ * The root layout is the one place every page passes through (including
+ * `/admin/**`, which nests inside it with no `<html>` of its own), so it must
+ * not be able to fail. A database that is momentarily unreachable should cost
+ * the shop its pixels, never its storefront.
+ *
+ * The pixels themselves are NOT rendered here — only the Search Console
+ * verification tag is read from this. `<Analytics>` mounts in
+ * `app/(store)/layout.tsx` so it never loads on `/admin/**`.
  */
 async function pixelIds() {
   try {
@@ -73,16 +76,6 @@ async function pixelIds() {
   }
 }
 
-async function consentSetting(): Promise<boolean> {
-  try {
-    return (await getIntegrationSettings()).consentBanner;
-  } catch {
-    // Asking for consent we do not need is the harmless failure; loading a
-    // pixel without it is not.
-    return DEFAULT_SETTINGS.integrations.consentBanner;
-  }
-}
-
 export const viewport: Viewport = {
   themeColor: "#FCFBF8",
   colorScheme: "light",
@@ -90,9 +83,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [ids, requireConsent] = await Promise.all([pixelIds(), consentSetting()]);
-
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${archivo.variable} ${interTight.variable}`} suppressHydrationWarning>
       <body className="min-h-dvh bg-paper text-ink">
@@ -100,14 +91,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {children}
         <CartHydration />
         <ToastViewport />
-        <Analytics
-          ids={{
-            metaPixelId: ids.metaPixelId,
-            ga4MeasurementId: ids.ga4MeasurementId,
-            tiktokPixelCode: ids.tiktokPixelCode,
-          }}
-          requireConsent={requireConsent}
-        />
       </body>
     </html>
   );
