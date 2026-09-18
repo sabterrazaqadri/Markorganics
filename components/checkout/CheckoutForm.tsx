@@ -76,6 +76,11 @@ export function CheckoutForm({ paymentMethods, paymentNote }: { paymentMethods: 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // Set the instant an order succeeds, before the cart is cleared. Without
+  // it, clearing the cart drops `items` to zero a render before the
+  // navigation to /order/[number] actually swaps the page, so this form
+  // flashes its "your cart is empty" state for a moment on every order.
+  const [redirecting, setRedirecting] = useState(false);
 
   // Delivery rates, blocked cities and discounts all live in the database, so
   // the shown total is a server quote keyed on the cart, code and city.
@@ -158,6 +163,7 @@ export function CheckoutForm({ paymentMethods, paymentNote }: { paymentMethods: 
     startTransition(async () => {
       const result = await placeOrder(input);
       if (result.ok) {
+        setRedirecting(true);
         clear();
         router.replace(`/order/${result.orderNumber}`);
         return;
@@ -167,6 +173,8 @@ export function CheckoutForm({ paymentMethods, paymentNote }: { paymentMethods: 
       setMessage(result.message ?? t.checkFields);
     });
   }
+
+  if (redirecting) return <p className={`mt-6 text-ink-soft ${urdu}`}>{t.placing}</p>;
 
   if (!hydrated) return <p className={`mt-6 text-ink-soft ${urdu}`}>{t.loading}</p>;
 
