@@ -22,6 +22,14 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  // Read inside the keydown handler via a ref, not a dependency: `onClose` is
+  // an inline arrow function at every call site, so a new one arrives on
+  // every keystroke a field inside the modal causes. Depending on it here
+  // used to re-run this effect on every keystroke, which stole focus back to
+  // the dialog's first focusable element (its own "Close" button) instead of
+  // wherever the person was actually typing.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -32,7 +40,7 @@ export function Modal({
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== "Tab" || !node) return;
@@ -54,7 +62,7 @@ export function Modal({
       document.removeEventListener("keydown", onKey, true);
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   return (
