@@ -186,13 +186,21 @@ export async function editOrder(
 
     /* Reject the whole edit if any decrease cannot be covered. */
     const takes = [...delta.entries()].filter(([, n]) => n < 0);
+    const costById = new Map<string, number>();
     if (takes.length) {
       const rows = await tx
-        .select({ id: productVariants.id, stock: productVariants.stock, label: productVariants.label, sku: productVariants.sku })
+        .select({
+          id: productVariants.id,
+          stock: productVariants.stock,
+          label: productVariants.label,
+          sku: productVariants.sku,
+          avgCostPaisa: productVariants.avgCostPaisa,
+        })
         .from(productVariants)
         .where(inArray(productVariants.id, takes.map(([id]) => id)))
         .for("update");
       const stockById = new Map(rows.map((r) => [r.id, r]));
+      for (const r of rows) costById.set(r.id, r.avgCostPaisa);
       for (const [variantId, n] of takes) {
         const row = stockById.get(variantId);
         if (!row) throw new ActionError("An item on this order no longer exists.");
@@ -234,9 +242,11 @@ export async function editOrder(
         lineTotalPaisa: lineTotal,
       };
       if (line.id) {
+        // Cost is never rewritten on an edit: it stays the price paid for the unit that was actually sold.
         await tx.update(orderItems).set(values).where(eq(orderItems.id, line.id));
       } else {
-        await tx.insert(orderItems).values({ ...values, orderId: order.id });
+        const unitCostPaisa = line.variantId ? (costById.get(line.variantId) ?? 0) : 0;
+        await tx.insert(orderItems).values({ ...values, unitCostPaisa, orderId: order.id });
       }
     }
 

@@ -180,6 +180,7 @@ export async function createProduct(values: ProductValues, userId?: string): Pro
           barcode: v.barcode,
           pricePaisa: rupeesToPaisa(v.priceRupees),
           compareAtPaisa: v.compareAtRupees ? rupeesToPaisa(v.compareAtRupees) : null,
+          avgCostPaisa: v.costRupees != null ? rupeesToPaisa(v.costRupees) : 0,
           stock: values.isBundle ? 0 : v.stock,
           lowStockThreshold: v.lowStockThreshold,
           sortOrder: i,
@@ -220,7 +221,11 @@ export async function updateProduct(id: string, values: ProductValues, userId?: 
         updatedAt: new Date(),
       };
       if (v.id) {
-        await tx.update(productVariants).set(data).where(and(eq(productVariants.id, v.id), eq(productVariants.productId, id)));
+        await tx
+          .update(productVariants)
+          // A blank cost field leaves the weighted-average cost exactly where inventory adjustments left it.
+          .set(v.costRupees != null ? { ...data, avgCostPaisa: rupeesToPaisa(v.costRupees) } : data)
+          .where(and(eq(productVariants.id, v.id), eq(productVariants.productId, id)));
         // Stock moves through the ledger so the history stays complete. A
         // bundle's stock is derived from its parts and is never set by hand.
         if (!values.isBundle) {
@@ -230,7 +235,12 @@ export async function updateProduct(id: string, values: ProductValues, userId?: 
       } else {
         const [row] = await tx
           .insert(productVariants)
-          .values({ ...data, productId: id, stock: values.isBundle ? 0 : v.stock })
+          .values({
+            ...data,
+            productId: id,
+            stock: values.isBundle ? 0 : v.stock,
+            avgCostPaisa: v.costRupees != null ? rupeesToPaisa(v.costRupees) : 0,
+          })
           .returning({ id: productVariants.id });
         keepIds.push(row.id);
       }

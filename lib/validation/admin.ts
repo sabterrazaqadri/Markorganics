@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  EXPENSE_CATEGORIES,
   INVENTORY_REASONS,
   METAFIELD_TYPES,
   ORDER_STATUSES,
@@ -256,11 +257,24 @@ export const inventoryAdjustSchema = z.object({
   stock: z.coerce.number().int().min(0).max(100_000),
   reason: z.enum(INVENTORY_REASONS),
   note: trimmed(200).optional(),
+  /** Cost paid per unit, in rupees. Only meaningful when the stock went up. */
+  unitCostRupees: z
+    .union([z.coerce.number().min(0).max(1_000_000), z.literal(""), z.null(), z.undefined()])
+    .transform((v) => (v === "" || v === null || v === undefined ? null : v)),
 });
 
 export const lowStockSchema = z.object({
   variantId: uuid,
   lowStockThreshold: z.coerce.number().int().min(0).max(10_000),
+});
+
+/* -------------------------------------------------------------- expenses */
+
+export const expenseEntrySchema = z.object({
+  category: z.enum(EXPENSE_CATEGORIES),
+  amountRupees: z.coerce.number().min(0.01, "Amount is required").max(100_000_000),
+  occurredOn: dateString,
+  note: trimmed(200).optional(),
 });
 
 /* ------------------------------------------------------------- customers */

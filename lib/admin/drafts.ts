@@ -124,13 +124,21 @@ export async function convertDraft(ctx: AdminContext, draftId: string): Promise<
 
     /* Check the shelf before taking anything. */
     const variantIds = items.map((i) => i.variantId).filter((v): v is string => Boolean(v));
+    const costById = new Map<string, number>();
     if (variantIds.length) {
       const rows = await tx
-        .select({ id: productVariants.id, stock: productVariants.stock, sku: productVariants.sku, label: productVariants.label })
+        .select({
+          id: productVariants.id,
+          stock: productVariants.stock,
+          sku: productVariants.sku,
+          label: productVariants.label,
+          avgCostPaisa: productVariants.avgCostPaisa,
+        })
         .from(productVariants)
         .where(inArray(productVariants.id, variantIds))
         .for("update");
       const byId = new Map(rows.map((r) => [r.id, r]));
+      for (const r of rows) costById.set(r.id, r.avgCostPaisa);
       const wanted = new Map<string, number>();
       for (const item of items) {
         if (!item.variantId) continue;
@@ -189,6 +197,7 @@ export async function convertDraft(ctx: AdminContext, draftId: string): Promise<
         variantLabel: i.variantLabel,
         sku: i.sku,
         unitPricePaisa: i.unitPricePaisa,
+        unitCostPaisa: i.variantId ? (costById.get(i.variantId) ?? 0) : 0,
         quantity: i.quantity,
         lineTotalPaisa: i.lineTotalPaisa,
       })),

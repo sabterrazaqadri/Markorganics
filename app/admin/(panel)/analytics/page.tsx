@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { requireView } from "@/lib/admin/session";
+import { can } from "@/lib/admin/permissions";
 import { getAnalytics, type Metric } from "@/lib/admin/analytics";
+import { listExpenses } from "@/lib/admin/expenses";
 import { analyticsRangeSchema } from "@/lib/validation/admin";
 import { formatPKR } from "@/lib/money";
 import { Card, EmptyState, PageHeader } from "@/components/admin/ui";
 import { SeriesChart } from "@/components/admin/SeriesChart";
+import { ExpensesPanel } from "@/components/admin/ExpensesPanel";
 
 export const metadata = { title: "Analytics" };
 export const dynamic = "force-dynamic";
@@ -61,10 +64,12 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ range?: string; from?: string; to?: string }>;
 }) {
-  await requireView("analytics:read");
+  const ctx = await requireView("analytics:read");
+  const canWriteExpenses = can(ctx.user.role, "analytics:write");
   const sp = await searchParams;
   const range = analyticsRangeSchema.safeParse(sp).data ?? analyticsRangeSchema.parse({});
   const report = await getAnalytics(range);
+  const expenses = await listExpenses({ from: report.period.from, to: report.period.to });
 
   const qs = (key: string) => {
     const params = new URLSearchParams();
@@ -132,6 +137,58 @@ export default async function AnalyticsPage({
         <MetricTile label="Return rate" metric={report.returnRate} format={pct} invert />
         <MetricTile label="New customers" metric={report.newCustomers} format={int} />
         <MetricTile label="Returning customers" metric={report.returningCustomers} format={int} />
+      </div>
+
+      <div className="mt-3">
+        <Card title="Profit and loss">
+          <div className="a-scroll">
+            <table className="a-table">
+              <tbody>
+                <tr>
+                  <td>Revenue</td>
+                  <td className="a-num">{formatPKR(report.pnl.revenuePaisa)}</td>
+                </tr>
+                <tr>
+                  <td>Cost of goods sold</td>
+                  <td className="a-num text-[var(--a-soft)]">−{formatPKR(report.pnl.cogsPaisa)}</td>
+                </tr>
+                <tr className="font-semibold">
+                  <td>Gross profit</td>
+                  <td className="a-num">{formatPKR(report.pnl.grossProfitPaisa)}</td>
+                </tr>
+                <tr>
+                  <td>Ad spend</td>
+                  <td className="a-num text-[var(--a-soft)]">−{formatPKR(report.pnl.adSpendPaisa)}</td>
+                </tr>
+                <tr>
+                  <td>Delivery / courier</td>
+                  <td className="a-num text-[var(--a-soft)]">−{formatPKR(report.pnl.deliveryCostPaisa)}</td>
+                </tr>
+                <tr>
+                  <td>Other expenses</td>
+                  <td className="a-num text-[var(--a-soft)]">−{formatPKR(report.pnl.otherExpensePaisa)}</td>
+                </tr>
+                <tr className="font-semibold">
+                  <td>Net profit</td>
+                  <td
+                    className={`a-num ${report.pnl.netProfitPaisa < 0 ? "text-[var(--a-danger)]" : "text-[var(--a-ok)]"}`}
+                  >
+                    {formatPKR(report.pnl.netProfitPaisa)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="a-hint p-3 pt-0">
+            COGS uses each sale&apos;s snapshotted unit cost, so it never moves when a cost is edited later. Ad spend
+            and delivery cost come from the entries below — Net Profit is only as complete as what&apos;s logged
+            there.
+          </p>
+        </Card>
+      </div>
+
+      <div className="mt-3">
+        <ExpensesPanel rows={expenses} canWrite={canWriteExpenses} />
       </div>
 
       <div className="mt-3 grid gap-3 xl:grid-cols-2">

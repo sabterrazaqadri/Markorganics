@@ -23,6 +23,28 @@ export interface AdjustInput {
   note?: string;
   userId?: string | null;
   orderId?: string | null;
+  /** Cost paid per unit of a positive ("received") delta. Ignored otherwise. */
+  unitCostPaisa?: number | null;
+}
+
+/**
+ * A positive delta with a unit cost moves the variant's weighted-average
+ * cost; anything else (a sale, a correction, damage, theft) leaves the
+ * average exactly where it was, because none of those are a purchase.
+ */
+async function rollCostForward(
+  tx: Tx,
+  variantId: string,
+  priorStock: number,
+  priorAvgCostPaisa: number,
+  delta: number,
+  unitCostPaisa?: number | null,
+): Promise<void> {
+  if (delta <= 0 || unitCostPaisa == null) return;
+  const nextStock = priorStock + delta;
+  const nextAvg =
+    nextStock > 0 ? Math.round((priorStock * priorAvgCostPaisa + delta * unitCostPaisa) / nextStock) : unitCostPaisa;
+  await tx.update(productVariants).set({ avgCostPaisa: nextAvg }).where(eq(productVariants.id, variantId));
 }
 
 /**
@@ -34,15 +56,20 @@ export async function adjustStock(tx: Tx, input: AdjustInput): Promise<number> {
     .update(productVariants)
     .set({ stock: sql`GREATEST(0, ${productVariants.stock} + ${input.delta})`, updatedAt: new Date() })
     .where(eq(productVariants.id, input.variantId))
-    .returning({ stock: productVariants.stock });
+    .returning({ stock: productVariants.stock, avgCostPaisa: productVariants.avgCostPaisa });
 
   if (!row) throw new Error("Variant not found");
+
+  // GREATEST(0, ...) never clamps a positive delta, so the prior stock is exact.
+  const priorStock = row.stock - input.delta;
+  await rollCostForward(tx, input.variantId, priorStock, row.avgCostPaisa, input.delta, input.unitCostPaisa);
 
   await tx.insert(inventoryAdjustments).values({
     variantId: input.variantId,
     delta: input.delta,
     resultingStock: row.stock,
     reason: input.reason,
+    unitCostPaisa: input.delta > 0 ? (input.unitCostPaisa ?? null) : null,
     note: input.note ?? "",
     userId: input.userId ?? null,
     orderId: input.orderId ?? null,
@@ -55,10 +82,17 @@ export async function adjustStock(tx: Tx, input: AdjustInput): Promise<number> {
 /** Sets an absolute stock level, recording the implied delta. */
 export async function setStock(
   tx: Tx,
-  input: { variantId: string; stock: number; reason: InventoryReason; note?: string; userId?: string | null },
+  input: {
+    variantId: string;
+    stock: number;
+    reason: InventoryReason;
+    note?: string;
+    userId?: string | null;
+    unitCostPaisa?: number | null;
+  },
 ): Promise<{ from: number; to: number }> {
   const [current] = await tx
-    .select({ stock: productVariants.stock })
+    .select({ stock: productVariants.stock, avgCostPaisa: productVariants.avgCostPaisa })
     .from(productVariants)
     .where(eq(productVariants.id, input.variantId))
     .for("update");
@@ -67,15 +101,18 @@ export async function setStock(
   const to = Math.max(0, Math.round(input.stock));
   if (to === current.stock) return { from: current.stock, to };
 
+  const delta = to - current.stock;
   await tx
     .update(productVariants)
     .set({ stock: to, updatedAt: new Date() })
     .where(eq(productVariants.id, input.variantId));
+  await rollCostForward(tx, input.variantId, current.stock, current.avgCostPaisa, delta, input.unitCostPaisa);
   await tx.insert(inventoryAdjustments).values({
     variantId: input.variantId,
-    delta: to - current.stock,
+    delta,
     resultingStock: to,
     reason: input.reason,
+    unitCostPaisa: delta > 0 ? (input.unitCostPaisa ?? null) : null,
     note: input.note ?? "",
     userId: input.userId ?? null,
   });

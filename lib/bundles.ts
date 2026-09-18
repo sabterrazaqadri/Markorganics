@@ -177,6 +177,8 @@ export interface ExpandedLine {
   variantLabel: string;
   sku: string;
   unitPricePaisa: number;
+  /** The variant's avg_cost_paisa at sale time, so past P&L never moves under a later cost change. */
+  unitCostPaisa: number;
   quantity: number;
   bundleSku: string | null;
   bundleName: string | null;

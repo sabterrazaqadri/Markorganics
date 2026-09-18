@@ -94,6 +94,16 @@ export interface SeriesPoint {
   revenuePaisa: number;
 }
 
+export interface ProfitAndLoss {
+  revenuePaisa: number;
+  cogsPaisa: number;
+  grossProfitPaisa: number;
+  adSpendPaisa: number;
+  deliveryCostPaisa: number;
+  otherExpensePaisa: number;
+  netProfitPaisa: number;
+}
+
 export interface AnalyticsReport {
   period: Period;
   revenue: Metric;
@@ -112,6 +122,7 @@ export interface AnalyticsReport {
   funnel: { status: string; n: number }[];
   cancelReasons: { reason: string; n: number }[];
   discounts: { title: string; code: string | null; uses: number; discountedPaisa: number; revenuePaisa: number }[];
+  pnl: ProfitAndLoss;
 }
 
 async function totals(from: Date, to: Date) {
@@ -157,11 +168,36 @@ async function customerSplit(from: Date, to: Date) {
   return { fresh: Number(r?.fresh ?? 0), returning: Number(r?.returning ?? 0) };
 }
 
+/** COGS mirrors the revenue predicate exactly, so Gross Profit is apples to apples. */
+async function cogs(from: Date, to: Date): Promise<number> {
+  const res = await db.execute<{ cogs: number }>(sql`
+    SELECT COALESCE(SUM(oi.unit_cost_paisa * oi.quantity), 0)::bigint AS cogs
+    FROM order_items oi JOIN orders o ON o.id = oi.order_id
+    WHERE o.deleted_at IS NULL AND ${REVENUE_O} AND o.created_at BETWEEN ${from} AND ${to}
+  `);
+  return Number(res.rows?.[0]?.cogs ?? 0);
+}
+
+/** Ad spend and courier cost have no automated source yet, so someone typed them in. */
+async function expenseTotals(from: Date, to: Date): Promise<Record<"ad_spend" | "delivery" | "other", number>> {
+  const res = await db.execute<{ category: string; total: number }>(sql`
+    SELECT category::text AS category, COALESCE(SUM(amount_paisa), 0)::bigint AS total
+    FROM expense_entries
+    WHERE occurred_on BETWEEN ${from} AND ${to}
+    GROUP BY 1
+  `);
+  const out = { ad_spend: 0, delivery: 0, other: 0 };
+  for (const row of res.rows ?? []) {
+    if (row.category in out) out[row.category as keyof typeof out] = Number(row.total);
+  }
+  return out;
+}
+
 async function buildReport(range: AnalyticsRange): Promise<AnalyticsReport> {
   const period = resolvePeriod(range);
   const { from, to, prevFrom, prevTo } = period;
 
-  const [now, prev, nowCust, prevCust, series, topProducts, topVariants, byCity, funnel, reasons, discountRows, repeat] =
+  const [now, prev, nowCust, prevCust, series, topProducts, topVariants, byCity, funnel, reasons, discountRows, repeat, cogsPaisa, expenses] =
     await Promise.all([
       totals(from, to),
       totals(prevFrom, prevTo),
@@ -230,6 +266,8 @@ async function buildReport(range: AnalyticsRange): Promise<AnalyticsReport> {
                COUNT(*)::int AS total_customers
         FROM customers WHERE deleted_at IS NULL AND merged_into_id IS NULL AND orders_count > 0
       `),
+      cogs(from, to),
+      expenseTotals(from, to),
     ]);
 
   const rate = (n: number, d: number) => (d === 0 ? 0 : Math.round((n / d) * 1000) / 10);
@@ -287,6 +325,19 @@ async function buildReport(range: AnalyticsRange): Promise<AnalyticsReport> {
       discountedPaisa: Number(r.discounted),
       revenuePaisa: Number(r.revenue),
     })),
+    pnl: (() => {
+      const grossProfitPaisa = now.revenue - cogsPaisa;
+      const netProfitPaisa = grossProfitPaisa - expenses.ad_spend - expenses.delivery - expenses.other;
+      return {
+        revenuePaisa: now.revenue,
+        cogsPaisa,
+        grossProfitPaisa,
+        adSpendPaisa: expenses.ad_spend,
+        deliveryCostPaisa: expenses.delivery,
+        otherExpensePaisa: expenses.other,
+        netProfitPaisa,
+      };
+    })(),
   };
 }
 

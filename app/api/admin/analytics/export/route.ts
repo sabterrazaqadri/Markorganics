@@ -36,6 +36,15 @@ export async function GET(req: Request) {
   rows.push(["returning_customers", report.returningCustomers.value, report.returningCustomers.previous, report.returningCustomers.changePct ?? ""]);
   rows.push(["repeat_purchase_pct", report.repeatRatePct, "", ""]);
 
+  section("Profit and loss", ["line", "pkr"]);
+  rows.push(["revenue", paisaToDecimal(report.pnl.revenuePaisa)]);
+  rows.push(["cost_of_goods_sold", paisaToDecimal(report.pnl.cogsPaisa)]);
+  rows.push(["gross_profit", paisaToDecimal(report.pnl.grossProfitPaisa)]);
+  rows.push(["ad_spend", paisaToDecimal(report.pnl.adSpendPaisa)]);
+  rows.push(["delivery_cost", paisaToDecimal(report.pnl.deliveryCostPaisa)]);
+  rows.push(["other_expenses", paisaToDecimal(report.pnl.otherExpensePaisa)]);
+  rows.push(["net_profit", paisaToDecimal(report.pnl.netProfitPaisa)]);
+
   section("Sales over time", ["day", "orders", "revenue_pkr"]);
   for (const p of report.series) rows.push([p.day, p.orders, paisaToDecimal(p.revenuePaisa)]);
 

@@ -126,6 +126,7 @@ export async function adjustStockAction(input: {
   stock: number | string;
   reason: string;
   note?: string;
+  unitCostRupees?: number | string | null;
 }): Promise<ActionResult<{ from: number; to: number }>> {
   return run(async () => {
     const ctx = await requirePermission("inventory:write");
@@ -137,6 +138,7 @@ export async function adjustStockAction(input: {
         reason: parsed.reason,
         note: parsed.note,
         userId: ctx.user.id,
+        unitCostPaisa: parsed.unitCostRupees == null ? null : rupeesToPaisa(parsed.unitCostRupees),
       }),
     );
     await audit(ctx, {

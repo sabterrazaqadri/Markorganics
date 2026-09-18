@@ -65,6 +65,7 @@ export async function addToOrderAction(raw: unknown): Promise<AddToOrderResult> 
           sku: productVariants.sku,
           label: productVariants.label,
           pricePaisa: productVariants.pricePaisa,
+          avgCostPaisa: productVariants.avgCostPaisa,
           stock: productVariants.stock,
           productName: products.name,
           productSlug: products.slug,
@@ -96,6 +97,7 @@ export async function addToOrderAction(raw: unknown): Promise<AddToOrderResult> 
           variantLabel: row.label,
           sku: row.sku,
           unitPricePaisa: row.pricePaisa,
+          unitCostPaisa: row.avgCostPaisa,
           quantity,
           lineTotalPaisa: row.pricePaisa * quantity,
         });

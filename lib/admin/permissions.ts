@@ -31,6 +31,7 @@ export const PERMISSIONS = [
   "reviews:read",
   "reviews:write",
   "analytics:read",
+  "analytics:write", // ad spend / delivery cost entries that feed the P&L
   "settings:read",
   "settings:write",
   "staff:read",
@@ -71,6 +72,7 @@ const MANAGER: Permission[] = [
   "reviews:read",
   "reviews:write",
   "analytics:read",
+  "analytics:write",
   "activity:read",
 ];
 

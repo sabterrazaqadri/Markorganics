@@ -84,6 +84,10 @@ export const variantInputSchema = z.object({
     .transform((v) => (v === "" || v === null || v === undefined || v === 0 ? null : v)),
   stock: z.coerce.number().int().min(0).max(100_000),
   lowStockThreshold: z.coerce.number().int().min(0).max(10_000).default(5),
+  /** Direct override of the weighted-average cost. Blank leaves it as it was. */
+  costRupees: z
+    .union([z.coerce.number().min(0).max(1_000_000), z.literal(""), z.null(), z.undefined()])
+    .transform((v) => (v === "" || v === null || v === undefined ? null : v)),
 });
 
 export const metafieldInputSchema = z.object({

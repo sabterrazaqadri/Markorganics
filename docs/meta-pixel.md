@@ -9,7 +9,7 @@ sync, how to check it in Events Manager, and how to turn it off.
 
 Unlike a typical Next.js pixel setup, the Pixel ID, Conversions API access
 token, test event code and Graph API version are **not** plain environment
-variables. They are configured at **`/admin/settings` → Integrations → Meta**
+variables. They are configured at **`/admin/integrations` → Ad platforms → Meta**
 and stored encrypted in the `integrations` table (see `lib/integrations`).
 This is the same system used for WhatsApp, PostEx and TikTok, and it means:
 
@@ -74,7 +74,7 @@ runner sends.
 
 ## Verifying in Events Manager (test mode)
 
-1. In `/admin/settings` → Integrations → Meta, paste a **test event code**
+1. In `/admin/integrations` → Ad platforms → Meta, paste a **test event code**
    from Events Manager's "Test events" tab, then save (enabled + not dry
    run).
 2. Walk the funnel: open a product page, add it to cart, go to checkout,
@@ -95,7 +95,7 @@ runner sends.
 
 ## How to disable
 
-- **Fastest, reversible**: `/admin/settings` → Integrations → Meta → turn
+- **Fastest, reversible**: `/admin/integrations` → Ad platforms → Meta → turn
   off "Enabled". No pixel loads, no CAPI calls are made, and the checkout
   flow is completely unaffected (the enqueue still happens but
   `sendMetaEvent` returns immediately with `dryRun`/`isEnabled: false`).

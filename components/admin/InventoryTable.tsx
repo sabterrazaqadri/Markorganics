@@ -15,6 +15,7 @@ export function InventoryTable({ rows, canWrite }: { rows: InventoryRow[]; canWr
   const [stock, setStock] = useState("0");
   const [reason, setReason] = useState<InventoryReason>("recount");
   const [note, setNote] = useState("");
+  const [unitCost, setUnitCost] = useState("");
 
   // Optimistic stock so the number moves the instant the modal closes.
   const [stocks, patchStock] = useOptimistic(
@@ -27,6 +28,7 @@ export function InventoryTable({ rows, canWrite }: { rows: InventoryRow[]; canWr
     setStock(String(stocks[row.variantId] ?? row.stock));
     setReason("recount");
     setNote("");
+    setUnitCost("");
   }
 
   function save() {
@@ -35,7 +37,13 @@ export function InventoryTable({ rows, canWrite }: { rows: InventoryRow[]; canWr
     runAction(
       async () => {
         patchStock({ id: editing.variantId, stock: next });
-        return adjustStockAction({ variantId: editing.variantId, stock: next, reason, note });
+        return adjustStockAction({
+          variantId: editing.variantId,
+          stock: next,
+          reason,
+          note,
+          unitCostRupees: reason === "received" && unitCost !== "" ? unitCost : null,
+        });
       },
       { success: "Stock updated", onDone: () => setEditing(null) },
     );
@@ -158,6 +166,24 @@ export function InventoryTable({ rows, canWrite }: { rows: InventoryRow[]; canWr
                 </select>
               </div>
             </div>
+            {reason === "received" ? (
+              <div className="mt-2">
+                <label htmlFor="adj-cost" className="a-label">
+                  Cost per unit (Rs, optional)
+                </label>
+                <input
+                  id="adj-cost"
+                  className="a-input"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="What this batch cost you"
+                  value={unitCost}
+                  onChange={(e) => setUnitCost(e.target.value)}
+                />
+                <p className="a-hint">Rolls into this variant&apos;s weighted-average cost, which drives COGS in Analytics.</p>
+              </div>
+            ) : null}
             <label htmlFor="adj-note" className="a-label mt-2">
               Note
             </label>

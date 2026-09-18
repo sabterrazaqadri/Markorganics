@@ -67,6 +67,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       compareAtRupees: v.compareAtPaisa ? String(paisaToRupees(v.compareAtPaisa)) : "",
       stock: String(v.stock),
       lowStockThreshold: String(v.lowStockThreshold),
+      costRupees: v.avgCostPaisa ? String(paisaToRupees(v.avgCostPaisa)) : "",
     })),
     metafields: values,
     collectionIds: memberships.map((m) => m.id),

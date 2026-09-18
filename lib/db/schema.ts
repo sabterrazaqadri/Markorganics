@@ -63,6 +63,7 @@ export const draftStatusEnum = pgEnum("draft_status", ["open", "completed", "can
 export const menuHandleEnum = pgEnum("menu_handle", ["header", "footer"]);
 export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved", "rejected"]);
 export const reviewSourceEnum = pgEnum("review_source", ["storefront", "admin"]);
+export const expenseCategoryEnum = pgEnum("expense_category", ["ad_spend", "delivery", "other"]);
 
 export const ORDER_STATUSES = orderStatusEnum.enumValues;
 export const REVIEW_STATUSES = reviewStatusEnum.enumValues;
@@ -284,6 +285,8 @@ export const productVariants = pgTable(
     barcode: text("barcode").notNull().default(""),
     pricePaisa: integer("price_paisa").notNull(),
     compareAtPaisa: integer("compare_at_paisa"),
+    /** Weighted-average cost per unit, moved by "received" inventory adjustments. Never touched by a sale. */
+    avgCostPaisa: integer("avg_cost_paisa").notNull().default(0),
     stock: integer("stock").notNull().default(0),
     lowStockThreshold: integer("low_stock_threshold").notNull().default(5),
     sortOrder: integer("sort_order").notNull().default(0),
@@ -359,6 +362,8 @@ export const inventoryAdjustments = pgTable(
     delta: integer("delta").notNull(),
     resultingStock: integer("resulting_stock").notNull(),
     reason: inventoryReasonEnum("reason").notNull(),
+    /** Only ever set on a positive "received" delta; feeds the variant's weighted-average cost. */
+    unitCostPaisa: integer("unit_cost_paisa"),
     note: text("note").notNull().default(""),
     userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
     orderId: uuid("order_id"),
@@ -368,6 +373,26 @@ export const inventoryAdjustments = pgTable(
     index("inventory_adjustments_variant_idx").on(t.variantId, t.createdAt),
     index("inventory_adjustments_created_idx").on(t.createdAt),
   ],
+);
+
+/**
+ * Manual costs with no automated source in this app: ad spend and courier
+ * charges are neither purchased through nor billed by anything the app talks
+ * to yet, so someone types them in here. The analytics report sums whatever
+ * falls inside the selected date range into the Net Profit line.
+ */
+export const expenseEntries = pgTable(
+  "expense_entries",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    category: expenseCategoryEnum("category").notNull(),
+    amountPaisa: integer("amount_paisa").notNull(),
+    occurredOn: timestamp("occurred_on", { withTimezone: true }).notNull(),
+    note: text("note").notNull().default(""),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("expense_entries_occurred_idx").on(t.occurredOn)],
 );
 
 /* ------------------------------------------------------------ collections */
@@ -560,6 +585,8 @@ export const orderItems = pgTable(
     variantLabel: text("variant_label").notNull(),
     sku: text("sku").notNull(),
     unitPricePaisa: integer("unit_price_paisa").notNull(),
+    /** The variant's avg_cost_paisa at the moment of sale, snapshotted so a later cost change never rewrites past P&L. */
+    unitCostPaisa: integer("unit_cost_paisa").notNull().default(0),
     quantity: integer("quantity").notNull(),
     lineTotalPaisa: integer("line_total_paisa").notNull(),
     /** Manual per-line discount applied by staff while editing. */
@@ -978,6 +1005,9 @@ export type DraftOrder = typeof draftOrders.$inferSelect;
 export type DraftOrderItem = typeof draftOrderItems.$inferSelect;
 export type AbandonedCheckout = typeof abandonedCheckouts.$inferSelect;
 export type InventoryAdjustment = typeof inventoryAdjustments.$inferSelect;
+export type ExpenseEntry = typeof expenseEntries.$inferSelect;
+export const EXPENSE_CATEGORIES = expenseCategoryEnum.enumValues;
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 export type CustomerSegment = typeof customerSegments.$inferSelect;
 export type MetafieldDefinition = typeof metafieldDefinitions.$inferSelect;
 export type MetafieldValue = typeof metafieldValues.$inferSelect;
