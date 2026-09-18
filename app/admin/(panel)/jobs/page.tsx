@@ -6,7 +6,7 @@ import { JOB_LABEL } from "@/lib/jobs/types";
 import type { JobStatus } from "@/lib/db/schema";
 import { PageHeader, StatTile } from "@/components/admin/ui";
 import { AutoSubmit } from "@/components/admin/client-ui";
-import { JobsTable, toJobRow } from "@/components/admin/JobsTable";
+import { JobsTable } from "@/components/admin/JobsTable";
 
 export const metadata = { title: "Jobs" };
 export const dynamic = "force-dynamic";
@@ -108,7 +108,7 @@ export default async function JobsPage({
         </AutoSubmit>
       </div>
 
-      <JobsTable rows={rows.map(toJobRow)} canWrite={can(ctx.user.role, "jobs:write")} />
+      <JobsTable rows={rows} canWrite={can(ctx.user.role, "jobs:write")} />
 
       {pages > 1 ? (
         <nav aria-label="Pagination" className="mt-3 flex items-center gap-2 text-[11.5px]">

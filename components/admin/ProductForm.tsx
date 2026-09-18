@@ -20,6 +20,8 @@ interface VariantRow {
   compareAtRupees: string;
   stock: string;
   lowStockThreshold: string;
+  /** Blank means "leave the weighted-average cost as it is". */
+  costRupees: string;
 }
 
 export interface MetafieldDef {
@@ -97,6 +99,7 @@ const EMPTY_VARIANT: VariantRow = {
   compareAtRupees: "",
   stock: "0",
   lowStockThreshold: "5",
+  costRupees: "",
 };
 
 export const EMPTY_FORM: ProductFormValues = {
@@ -218,6 +221,7 @@ export function ProductForm({
         compareAtRupees: v.compareAtRupees === "" ? "" : v.compareAtRupees,
         stock: v.stock,
         lowStockThreshold: v.lowStockThreshold,
+        costRupees: v.costRupees === "" ? "" : v.costRupees,
       })),
       metafields: definitions.map((d) => ({ definitionId: d.id, value: form.metafields[d.id] ?? "" })),
       collectionIds: form.collectionIds,
@@ -398,16 +402,19 @@ export function ProductForm({
                               </option>
                             ))}
                           </select>
+                          {err(`bundleComponents.${i}.variantId`)}
                         </td>
                         <td>
                           <input
                             className="a-input a-input-xs text-right"
                             type="number"
                             min={1}
+                            max={20}
                             aria-label={`Quantity of component ${i + 1}`}
                             value={c.quantity}
                             onChange={(e) => setComponent(i, { quantity: e.target.value })}
                           />
+                          {err(`bundleComponents.${i}.quantity`)}
                         </td>
                         <td>
                           <button
@@ -559,6 +566,7 @@ export function ProductForm({
                   <th>Barcode</th>
                   <th className="a-num">Price Rs</th>
                   <th className="a-num">Compare at</th>
+                  <th className="a-num">Cost Rs</th>
                   <th className="a-num">Stock</th>
                   <th className="a-num">Low at</th>
                   <th />
@@ -614,6 +622,20 @@ export function ProductForm({
                         aria-label={`Compare-at price for variant ${i + 1}`}
                         value={v.compareAtRupees}
                         onChange={(e) => setVariant(i, { compareAtRupees: e.target.value })}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        className="a-input a-input-xs text-right"
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        aria-label={`Cost per unit for variant ${i + 1}`}
+                        placeholder="—"
+                        value={v.costRupees}
+                        disabled={form.isBundle}
+                        title={form.isBundle ? "A kit's cost comes from its parts at the time of sale" : "Blank leaves the current weighted-average cost unchanged"}
+                        onChange={(e) => setVariant(i, { costRupees: e.target.value })}
                       />
                     </td>
                     <td>

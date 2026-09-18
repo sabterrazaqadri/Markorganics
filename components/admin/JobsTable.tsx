@@ -15,39 +15,9 @@ const STATUS_CLASS: Record<string, string> = {
   dead: "a-badge-danger",
 };
 
-export interface JobRow {
-  id: string;
-  type: string;
-  status: string;
-  attempts: number;
-  maxAttempts: number;
-  runAfter: string;
-  createdAt: string;
-  lastError: string | null;
-  idempotencyKey: string | null;
-  payload: unknown;
-  result: unknown;
-}
-
-export function toJobRow(job: Job): JobRow {
-  return {
-    id: job.id,
-    type: job.type,
-    status: job.status,
-    attempts: job.attempts,
-    maxAttempts: job.maxAttempts,
-    runAfter: job.runAfter.toISOString(),
-    createdAt: job.createdAt.toISOString(),
-    lastError: job.lastError,
-    idempotencyKey: job.idempotencyKey,
-    payload: job.payload,
-    result: job.result,
-  };
-}
-
-export function JobsTable({ rows, canWrite }: { rows: JobRow[]; canWrite: boolean }) {
+export function JobsTable({ rows, canWrite }: { rows: Job[]; canWrite: boolean }) {
   const { pending, error, runAction, show } = useAction();
-  const [open, setOpen] = useState<JobRow | null>(null);
+  const [open, setOpen] = useState<Job | null>(null);
 
   if (rows.length === 0) {
     return (
