@@ -23,7 +23,7 @@ export const DELIVERY_WINDOW = "2 to 5 working days";
 /** How long after checkout the customer may still add to the parcel from the order page. */
 export const POST_PURCHASE_WINDOW_MS = 60 * 60 * 1000;
 /** The product the homepage hero is built around. */
-export const FEATURED_PRODUCT_SLUG = "josh-mens-herbal-oil";
+export const FEATURED_PRODUCT_SLUG = "mark-josh-mens-herbal-oil";
 /** Payment methods shown on the product page, cart and checkout. COD is always on. */
 export const PAYMENT_METHODS = ["Cash on delivery"] as const;
 

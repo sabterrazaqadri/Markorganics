@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/hero/Hero";
+import { ProductRange } from "@/components/home/ProductRange";
+import { apothecaryFontVars } from "@/app/fonts/apothecary";
 import { FamilySection } from "@/components/home/FamilySection";
 import { TrustStrip } from "@/components/home/TrustStrip";
 import { BrandStory } from "@/components/home/BrandStory";
@@ -10,7 +12,6 @@ import { FAMILY_ORDER } from "@/lib/catalog";
 import { jsonLdString, organizationJsonLd } from "@/lib/jsonld";
 import { BRAND_NAME, FEATURED_PRODUCT_SLUG } from "@/config/commerce";
 import { getApprovedReviews, getRatingSummaries } from "@/lib/reviews";
-import { getSoldCounts } from "@/lib/queries/social-proof";
 
 export const revalidate = 60;
 
@@ -24,9 +25,8 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const products = await getActiveProducts();
   const featured = products.find((p) => p.slug === FEATURED_PRODUCT_SLUG) ?? null;
-  const [ratings, sold, featuredReviews] = await Promise.all([
+  const [ratings, featuredReviews] = await Promise.all([
     getRatingSummaries(products.map((p) => p.id)),
-    featured ? getSoldCounts([featured.id]) : Promise.resolve(new Map()),
     featured ? getApprovedReviews(featured.id, 3) : Promise.resolve([]),
   ]);
   const bestsellers = products.filter((p) => p.isBestseller).slice(0, 4);
@@ -35,11 +35,10 @@ export default async function HomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(organizationJsonLd()) }} />
-      <Hero
-        featured={featured}
-        rating={featured ? ratings.get(featured.id) : undefined}
-        soldLast30Days={featured ? (sold.get(featured.id)?.last30Days ?? 0) : 0}
-      />
+      <div className={apothecaryFontVars}>
+        <Hero />
+        <ProductRange products={products} />
+      </div>
 
       {featured && featuredReviews.length ? <FeaturedReviews product={featured} reviews={featuredReviews} /> : null}
 

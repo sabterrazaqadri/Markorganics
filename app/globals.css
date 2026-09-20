@@ -20,6 +20,38 @@
     Tahoma, serif;
 
   --radius-card: 6px;
+
+  /* Apothecary palette + type, scoped to the homepage hero and product-range
+     section (see app/fonts/apothecary.ts) — not the site-wide theme above. */
+  --color-apo-ivory: #fbf7ee;
+  --color-apo-surface: #fffdf8;
+  --color-apo-panel: #f4ecdc;
+  --color-apo-ink: #171310;
+  --color-apo-body: #5e564a;
+  --color-apo-muted: #6b6255;
+  --color-apo-hairline: #e3daca;
+  --color-apo-panel-border: #e6dcc7;
+  --color-apo-gold: #a8813c;
+  --color-apo-gold-dark: #8a6c2e;
+  --color-apo-cap-lip: #8b6829;
+  --color-apo-label: #f9f3e6;
+  --color-apo-caption: #8a8072;
+
+  --color-josh: #1e4433;
+  --color-josh-tint: #eaefe9;
+  --color-rahat: #b4531a;
+  --color-rahat-tint: #f6e9dc;
+  --color-rahat-ink: #96461a;
+  --color-nazakat: #a63b58;
+  --color-nazakat-tint: #f7e7ec;
+  --color-nazakat-ink: #8a2f49;
+
+  --font-apo-display: var(--font-fraunces), Georgia, serif;
+  --font-apo-sans: var(--font-work-sans), system-ui, sans-serif;
+  --font-apo-urdu: var(--font-nastaliq-apo), "Noto Nastaliq Urdu", serif;
+
+  --radius-apo-sm: 2px;
+  --radius-apo-md: 3px;
 }
 
 @layer base {

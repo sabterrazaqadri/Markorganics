@@ -1,205 +1,89 @@
 import Link from "next/link";
 import Image from "next/image";
-import type { ProductWithVariants } from "@/lib/db/schema";
-import type { RatingSummary } from "@/lib/reviews";
-import { formatPKR } from "@/lib/money";
-import { DELIVERY_WINDOW, SITE_URL } from "@/config/commerce";
-import { DELIVERY_WINDOW_UR } from "@/lib/i18n/checkout";
-import { Stars } from "@/components/product/Stars";
-import { HeroBottle } from "./HeroBottle";
-import { HeroBuy } from "./HeroBuy";
 
-interface Props {
-  featured?: ProductWithVariants | null;
-  rating?: RatingSummary;
-  soldLast30Days?: number;
-}
+const APO_CONTAINER = "mx-auto w-full max-w-[1440px] px-[22px] md:px-12 lg:px-[88px]";
 
 /**
- * The homepage opens on one product: Josh. Everything in the hero is live
- * from the catalogue (price, compare-at, stock, rating), so a price change in
- * the admin is a hero change. Falls back to the brand hero when the featured
- * product is missing or unpublished.
+ * The homepage hero sells the brand, not one product — price, stock and
+ * add-to-cart live on the PDP (components/product/PurchasePanel.tsx). Static
+ * and server-rendered.
  */
-export function Hero({ featured, rating, soldLast30Days = 0 }: Props) {
-  if (!featured || featured.variants.length === 0) return <BrandHero />;
-
-  const variant = featured.variants.find((v) => v.stock > 0) ?? featured.variants[0];
-  const compare = variant.compareAtPaisa && variant.compareAtPaisa > variant.pricePaisa ? variant.compareAtPaisa : null;
-  const savePct = compare ? Math.round(((compare - variant.pricePaisa) / compare) * 100) : 0;
-  const image = featured.images[0] ?? "/hero-bottle.png";
-  const url = `${SITE_URL}/products/${featured.slug}`;
-  const ur = featured.i18n?.ur;
-
+export function Hero() {
   return (
-    <section className="relative overflow-hidden" aria-labelledby="hero-title">
-      {/* A quiet field of the brand green behind the pack shot; the paper stays paper. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 md:block"
-        style={{ background: "radial-gradient(60% 70% at 60% 45%, rgba(46,106,101,0.12), rgba(46,106,101,0) 70%)" }}
-      />
-      <div className="container-x relative grid items-center gap-8 py-8 md:grid-cols-2 md:gap-12 md:py-14 lg:py-20">
-        <div className="order-2 md:order-1">
-          <p className="font-display text-sm font-semibold tracking-tight text-ink-soft">
-            <span className="lang-en">MARKORGANIC · Herbal massage oil for men</span>
+    <section aria-labelledby="hero-title" className="bg-apo-ivory">
+      <div className={`${APO_CONTAINER} grid gap-10 py-12 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12 lg:py-16 xl:grid-cols-[560px_1fr] xl:gap-16`}>
+        <div className="max-w-140">
+          <p className="font-apo-sans text-xs font-medium text-apo-gold-dark" style={{ letterSpacing: "0.22em" }}>
+            <span className="lang-en">MARKORGANIC · KARACHI</span>
             <span className="lang-ur urdu" lang="ur">
-              مارک آرگینک · مردوں کے لیے ہربل مساج آئل
+              مارک آرگینک · کراچی
             </span>
           </p>
-          <h1 id="hero-title" className="mt-3 text-4xl sm:text-5xl lg:text-[3.5rem]">
-            <span className="lang-en">Josh. Warmth you feel in a minute, made in Pakistan.</span>
-            <span className="lang-ur urdu" lang="ur">
-              جوش۔ ایک منٹ میں گرماہٹ، پاکستان میں تیار۔
+
+          <h1
+            id="hero-title"
+            className="mt-3 font-apo-display text-[38px] font-normal text-apo-ink lg:text-[70px]"
+            style={{ lineHeight: 1.03, letterSpacing: "-0.02em" }}
+          >
+            <span className="lang-en">
+              Made for the shelf,
+              <br className="hidden xl:block" /> not the shop window.
+            </span>
+            <span className="lang-ur urdu" lang="ur" style={{ lineHeight: 1.9 }}>
+              شیلف کے لیے بنایا گیا، دکھاوے کی دکان کے لیے نہیں۔
             </span>
           </h1>
-          <p className="mt-5 text-lg text-ink-soft">
-            <span className="lang-en">{featured.shortDescription}</span>
+
+          <p className="mt-5 max-w-117.5 font-apo-sans text-lg text-apo-body" style={{ lineHeight: 1.62 }}>
+            <span className="lang-en">
+              Herbal oils and balms, blended in Karachi. Single ingredients where possible, honest prices, and a label
+              you can actually read.
+            </span>
             <span className="lang-ur urdu" lang="ur">
-              {ur?.shortDescription ?? featured.shortDescription}
+              ہربل تیل اور بام، کراچی میں تیار کیے گئے۔ جہاں ممکن ہو سادہ اجزاء، ایماندار قیمتیں، اور ایسا لیبل جسے آپ
+              واقعی پڑھ سکیں۔
             </span>
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="tabular text-3xl font-semibold">{formatPKR(variant.pricePaisa)}</span>
-            {compare ? (
-              <>
-                <s className="tabular text-lg text-ink-soft">{formatPKR(compare)}</s>
-                <span className="rounded bg-band-care/10 px-2 py-0.5 text-sm font-medium text-band-care">
-                  <span className="lang-en">Save {savePct}%</span>
-                  <span className="lang-ur urdu" lang="ur">
-                    {savePct}% بچت
-                  </span>
-                </span>
-              </>
-            ) : null}
-            <span className="text-sm text-ink-soft">· {variant.label}</span>
-          </div>
-
-          {rating && rating.count > 0 ? (
-            <Link href={`/products/${featured.slug}#reviews`} className="mt-2 inline-flex items-center gap-2 text-sm text-ink-soft hover:text-ink">
-              <Stars value={rating.average} size={16} />
-              <span className="tabular font-medium text-ink">{rating.average.toFixed(1)}</span>
-              <span>
-                <span className="lang-en">
-                  ({rating.count} review{rating.count === 1 ? "" : "s"})
-                </span>
-                <span className="lang-ur urdu" lang="ur">
-                  ({rating.count} آراء)
-                </span>
+          <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <Link
+              href="/products"
+              className="inline-flex h-13 items-center gap-2 rounded-apo-sm bg-josh px-7.5 font-apo-sans text-[15px] font-medium text-apo-ivory transition-colors hover:bg-apo-ink"
+            >
+              <span className="lang-en">Shop all products</span>
+              <span className="lang-ur urdu" lang="ur">
+                تمام پروڈکٹس دیکھیں
               </span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </Link>
-          ) : soldLast30Days >= 10 ? (
-            <p className="mt-2 text-sm text-ink-soft">
-              <span className="lang-en">{soldLast30Days} sold in the last 30 days</span>
+            <Link href="/about" className="font-apo-sans text-[15px] font-medium text-apo-ink underline" style={{ textUnderlineOffset: "5px" }}>
+              <span className="lang-en">Our story</span>
               <span className="lang-ur urdu" lang="ur">
-                اس مہینے {soldLast30Days} فروخت
-              </span>
-            </p>
-          ) : null}
-
-          <div className="mt-7">
-            <HeroBuy
-              product={{ slug: featured.slug, name: featured.name, image, url }}
-              variant={{ id: variant.id, sku: variant.sku, label: variant.label, pricePaisa: variant.pricePaisa, stock: variant.stock }}
-            />
-            <Link href={`/products/${featured.slug}`} className="mt-3 inline-block text-sm font-medium underline underline-offset-4">
-              <span className="lang-en">Ingredients, how to use and reviews</span>
-              <span className="lang-ur urdu" lang="ur">
-                اجزاء، استعمال کا طریقہ اور آراء
+                ہماری کہانی
               </span>
             </Link>
           </div>
 
-          <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-soft">
-            <li>
-              <span className="lang-en">Cash on delivery</span>
-              <span className="lang-ur urdu" lang="ur">
-                ڈیلیوری پر ادائیگی
-              </span>
-            </li>
-            <li>
-              <span className="lang-en">Delivery in {DELIVERY_WINDOW}</span>
-              <span className="lang-ur urdu" lang="ur">
-                {DELIVERY_WINDOW_UR} میں ڈیلیوری
-              </span>
-            </li>
-            <li>
-              <span className="lang-en">Plain, discreet packaging</span>
-              <span className="lang-ur urdu" lang="ur">
-                سادہ، رازدارانہ پیکنگ
-              </span>
-            </li>
-            <li>
-              <span className="lang-en">7-day easy returns</span>
-              <span className="lang-ur urdu" lang="ur">
-                7 دن میں آسان واپسی
-              </span>
-            </li>
-          </ul>
+          <p className="mt-8 border-t border-apo-hairline pt-4 font-apo-sans text-[12.5px] text-apo-muted">
+            <span className="lang-en">Cash on delivery · 2–5 day nationwide delivery · Plain packaging</span>
+            <span className="lang-ur urdu" lang="ur">
+              ڈیلیوری پر ادائیگی · 2 سے 5 دن میں ملک بھر ڈیلیوری · سادہ پیکنگ
+            </span>
+          </p>
         </div>
 
-        <div className="order-1 md:order-2">
-          <Link href={`/products/${featured.slug}`} className="block" aria-label={`${featured.name}, see product`}>
-            <div className="relative mx-auto aspect-[4/5] w-full max-w-[460px] lg:max-w-[520px]">
-              <Image
-                src={image}
-                alt={`${featured.name} ${variant.label} bottle with its box`}
-                fill
-                priority
-                fetchPriority="high"
-                sizes="(min-width: 1024px) 520px, (min-width: 768px) 46vw, 92vw"
-                className="object-contain"
-              />
-            </div>
-          </Link>
-          {featured.images.length > 1 ? (
-            <ul className="mt-3 flex justify-center gap-2" aria-label="More photos">
-              {featured.images.slice(1, 4).map((src, i) => (
-                <li key={src}>
-                  <Link href={`/products/${featured.slug}`} className="block overflow-hidden rounded border border-rule bg-white hover:border-ink">
-                    <Image src={src} alt="" width={64} height={64} sizes="64px" className="h-16 w-16 object-cover" />
-                    <span className="sr-only">Photo {i + 2}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+        <div className="relative aspect-square w-full overflow-hidden rounded-apo-md border border-apo-panel-border">
+          <Image
+            src="/hero/range.webp"
+            alt="MARK Josh, Rahat and Nazakat herbal oils — three products, one standard of care"
+            fill
+            priority
+            sizes="(min-width: 1280px) 640px, (min-width: 1024px) 50vw, 92vw"
+            className="object-cover"
+          />
         </div>
-      </div>
-    </section>
-  );
-}
-
-/** The original brand hero, kept for when no featured product is available. */
-function BrandHero() {
-  return (
-    <section className="container-x grid items-center gap-8 py-10 md:grid-cols-2 md:gap-12 md:py-16 lg:py-20" aria-labelledby="hero-title">
-      <div className="order-2 md:order-1">
-        <p className="font-display text-sm font-semibold tracking-tight text-ink-soft">MARKORGANIC</p>
-        <h1 id="hero-title" className="mt-3 text-4xl sm:text-5xl lg:text-[3.5rem]">
-          Honest oils, balms and neel for every Pakistani home.
-        </h1>
-        <p className="mt-5 text-lg text-ink-soft">
-          Cold-pressed hair oils, a balm for every drawer and a liquid neel that never leaves patches. Pay cash when it
-          arrives.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/collections/oils" className="btn btn-band-oil">
-            Shop oils
-          </Link>
-          <Link href="/products" className="btn btn-secondary">
-            See all products
-          </Link>
-        </div>
-        <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-soft">
-          <li>Cash on delivery</li>
-          <li>Delivery across Pakistan</li>
-          <li>7-day easy returns</li>
-        </ul>
-      </div>
-      <div className="order-1 md:order-2">
-        <HeroBottle />
       </div>
     </section>
   );
