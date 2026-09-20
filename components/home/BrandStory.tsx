@@ -6,10 +6,10 @@ export function BrandStory() {
     <section aria-labelledby="story-title" className="container-x mt-16 grid items-center gap-8 md:grid-cols-2 md:gap-12">
       <div className="card overflow-hidden">
         <Image
-          src="/brand-story.jpg"
-          alt="Three MARK bottles with amber, teal and indigo label bands"
-          width={1200}
-          height={800}
+          src="/brand-story.webp"
+          alt="MARK Rahat, Josh and Nazakat bottles standing together"
+          width={1092}
+          height={736}
           sizes="(min-width: 768px) 50vw, 100vw"
           className="h-auto w-full"
         />

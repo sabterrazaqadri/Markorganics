@@ -35,7 +35,7 @@ export function CartButton() {
         <circle cx="10" cy="20.5" r="1.3" fill="currentColor" />
         <circle cx="17.5" cy="20.5" r="1.3" fill="currentColor" />
       </svg>
-      <span>Cart</span>
+      <span className="hidden sm:inline">Cart</span>
       <span
         className={`tabular inline-flex min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-xs font-semibold text-ink ${bump ? "anim-bump" : ""}`}
         aria-hidden="true"
