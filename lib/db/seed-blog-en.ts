@@ -62,7 +62,7 @@ One mistake we see often: warming a new injury. If a joint is swollen, red or ho
 
 If pain lasts more than two weeks, wakes you at night, or comes with a fever or swelling, see a doctor. An oil is comfort, not a diagnosis.
 
-Both products together cost less as the [Winter Pain Kit](/products/winter-pain-kit), delivered anywhere in Pakistan, cash on delivery.`,
+Both products together cost less as the Winter Pain Kit, delivered anywhere in Pakistan, cash on delivery.`,
   },
   {
     slug: "mustard-oil-massage-benefits-hair-joints-winter",
@@ -148,7 +148,7 @@ Hair fall from a recent illness, from stopping a medicine, or after childbirth u
 
 ## Pair it with the right second oil
 
-Onion oil is for the scalp. For the lengths and ends, a light [coconut oil](/products/mark-khalis-coconut-oil) after washing stops breakage, which is half of what people call hair fall. Together they cost less as the [Hair Care Kit](/products/hair-care-kit).`,
+Onion oil is for the scalp. For the lengths and ends, a light [coconut oil](/products/mark-khalis-coconut-oil) after washing stops breakage, which is half of what people call hair fall. Together they cost less as the Hair Care Kit.`,
   },
   {
     slug: "coconut-oil-vs-mustard-oil-for-hair",
@@ -323,7 +323,7 @@ Josh is sold in 15 ml because it is concentrated. At five drops a use, one bottl
 
 ## Order it
 
-Add it to your cart on the [product page](/products/mark-josh-mens-herbal-oil), or press the WhatsApp button there and we will place the order for you. Together with a bottle of mustard oil for a full-body massage, it is cheaper as the [Josh Massage Kit](/products/josh-massage-kit).`,
+Add it to your cart on the [product page](/products/mark-josh-mens-herbal-oil), or press the WhatsApp button there and we will place the order for you. Together with a bottle of mustard oil for a full-body massage, it is cheaper as the Josh Massage Kit.`,
   },
   {
     slug: "essential-oils-vs-carrier-oils-vs-herbal-massage-oils",
@@ -396,7 +396,7 @@ Neel is a blue pigment in water. A tiny amount in the final rinse leaves a trace
 
 ## Liquid versus the cake
 
-The old neel cake has to be dissolved by hand and never fully does, which is where the blue patches come from: undissolved specks landing on the cloth. [Liquid neel](/products/mark-liquid-neel) is already dissolved. It disperses evenly in water in one stir and cannot leave a patch.
+The old neel cake has to be dissolved by hand and never fully does, which is where the blue patches come from: undissolved specks landing on the cloth. Liquid neel is already dissolved. It disperses evenly in water in one stir and cannot leave a patch.
 
 ## How much and when
 
@@ -418,7 +418,7 @@ In a machine: add the capful to the rinse-water compartment, or to the drum when
 
 Whites and very light colours. Cotton, lawn, blends. Not on coloured clothes; it dulls them.
 
-A 200 ml bottle is [Rs 250](/products/mark-liquid-neel) and, at one cap a bucket, lasts a household most of a year.`,
+A 200 ml bottle is Rs 250 and, at one cap a bucket, lasts a household most of a year.`,
   },
   {
     slug: "muscle-pain-after-work-or-gym-hot-rub-or-cooling-balm",
@@ -457,6 +457,6 @@ Three times a day at most. Never under a tight bandage, never with a heating pad
 
 Soreness the day after a hard session is normal and needs movement, water and warmth, not treatment. A rub in the evening and a light walk the next morning shorten it. A sharp pain during a lift, that stays, is an injury: cold for two days, then warmth, and no lifting on it until it is gone.
 
-Both rubs together are the [Winter Pain Kit](/products/winter-pain-kit), Rs 399, cash on delivery anywhere in Pakistan.`,
+Both rubs together are the Winter Pain Kit, Rs 399, cash on delivery anywhere in Pakistan.`,
   },
 ];
