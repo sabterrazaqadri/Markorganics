@@ -16,9 +16,10 @@ import { getApprovedReviews, getRatingSummaries } from "@/lib/reviews";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: `${BRAND_NAME} - Josh herbal massage oil for men, hair oils, balm and neel`,
+  // absolute, or the layout template appends the brand a second time.
+  title: { absolute: `Herbal Massage Oils & Balms in Pakistan | ${BRAND_NAME}` },
   description:
-    "Josh herbal massage oil for men, cold-pressed mustard, coconut and onion oils, MARK Balm and Iodex for pain relief, and MARK Liquid Neel. Cash on delivery across Pakistan.",
+    "Josh, Rahat and Nazakat herbal massage oils, cold-pressed hair oils and MARK Balm. Blended in Karachi, cash on delivery across Pakistan in 2 to 5 days.",
   alternates: { canonical: "/" },
 };
 

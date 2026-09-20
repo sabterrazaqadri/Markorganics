@@ -8,7 +8,17 @@ export const FREE_SHIPPING_THRESHOLD_PAISA = 2000 * 100; // free delivery at Rs 
 export const CURRENCY = "PKR" as const;
 export const BRAND_NAME = "MARKORGANIC";
 export const BRAND_SHORT = "MARK";
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+/**
+ * Canonical origin. Canonicals, the sitemap, JSON-LD and every product feed
+ * are string-built from this, so it is normalised hard: a stray space in the
+ * env var once shipped `https://markorganic.com /products` into every sitemap
+ * entry and feed link. The apex domain redirects to www on Vercel, so www is
+ * the canonical host and is enforced here rather than trusted to the env.
+ */
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000")
+  .trim()
+  .replace(/\/+$/, "")
+  .replace(/^https:\/\/markorganic\.com$/, "https://www.markorganic.com");
 export const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "923001234567";
 export const SUPPORT_EMAIL = "hello@markorganic.com";
 

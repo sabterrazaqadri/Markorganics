@@ -16,7 +16,7 @@ export interface ProductContent {
 }
 
 export const PRODUCT_CONTENT: Record<string, ProductContent> = {
-  "josh-mens-herbal-oil": {
+  "mark-josh-mens-herbal-oil": {
     faqs: [
       {
         q: "What is Josh and who is it for?",

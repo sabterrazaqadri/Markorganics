@@ -38,7 +38,7 @@ Massage does three useful things: it warms the joint, it moves the fluid around 
 
 ## Mustard oil: the everyday choice
 
-Kachi ghani (cold-pressed) [mustard oil](/products/mustard-oil) is the traditional joint massage oil across Punjab and Sindh. It is thick, it holds heat well, and it has a natural warming feel on the skin. Warm two tablespoons in a small bowl, sit the bowl in hot water for a minute, then massage the joint in slow circles for five to ten minutes. Do this in the evening, cover the joint, and sleep.
+Kachi ghani (cold-pressed) [mustard oil](/products/mark-khalis-mustard-oil) is the traditional joint massage oil across Punjab and Sindh. It is thick, it holds heat well, and it has a natural warming feel on the skin. Warm two tablespoons in a small bowl, sit the bowl in hot water for a minute, then massage the joint in slow circles for five to ten minutes. Do this in the evening, cover the joint, and sleep.
 
 - Use it daily in winter and two or three times a week the rest of the year.
 - Do not put mustard oil on broken skin or a fresh, swollen injury.
@@ -78,7 +78,7 @@ Both products together cost less as the [Winter Pain Kit](/products/winter-pain-
 
 ## Kachi ghani versus refined
 
-Kachi ghani means the seed was pressed without heat. The oil keeps its dark colour, its sharp smell and its natural compounds. Refined mustard oil has been heated and filtered until it is pale and mild, which is fine for a frying pan and pointless for a scalp. For anything you put on skin or hair, use cold-pressed. Ours is [100 percent cold-pressed black mustard seed](/products/mustard-oil), nothing added.
+Kachi ghani means the seed was pressed without heat. The oil keeps its dark colour, its sharp smell and its natural compounds. Refined mustard oil has been heated and filtered until it is pale and mild, which is fine for a frying pan and pointless for a scalp. For anything you put on skin or hair, use cold-pressed. Ours is [100 percent cold-pressed black mustard seed](/products/mark-khalis-mustard-oil), nothing added.
 
 ## For hair and scalp
 
@@ -90,7 +90,7 @@ Mustard oil is heavy, so it sits on the scalp and softens it rather than soaking
 - Leave for an hour, or overnight with a towel on the pillow.
 - Shampoo out. It may take two washes.
 
-Once or twice a week is enough. More than that and the hair looks greasy for no extra benefit. For the lengths of the hair, a lighter oil such as [coconut](/products/coconut-oil) works better.
+Once or twice a week is enough. More than that and the hair looks greasy for no extra benefit. For the lengths of the hair, a lighter oil such as [coconut](/products/mark-khalis-coconut-oil) works better.
 
 ## For winter body massage
 
@@ -108,7 +108,7 @@ Warm mustard oil massage is the standard joint routine in every village and it s
 - Do not heat it on a flame; sit the bowl in hot water instead.
 - Do not expect it to be scent-free. The smell is part of the deal and washes out.
 
-A 100 ml bottle is [Rs 200](/products/mustard-oil), cash on delivery. Half of Pakistan's beauty advice starts here, and most of it is right.`,
+A 100 ml bottle is [Rs 200](/products/mark-khalis-mustard-oil), cash on delivery. Half of Pakistan's beauty advice starts here, and most of it is right.`,
   },
   {
     slug: "onion-oil-for-hair-fall-how-to-use-and-what-to-expect",
@@ -124,7 +124,7 @@ A 100 ml bottle is [Rs 200](/products/mustard-oil), cash on delivery. Half of Pa
 
 ## What is in it
 
-Onion oil is not pressed from onions. It is a carrier oil infused with onion extract and, in a good blend, a few other things that help the scalp. [Ours](/products/onion-oil) is coconut and castor oil with red onion extract, black seed oil, fenugreek, curry leaf and vitamin E. The castor gives it body, the coconut keeps it from being sticky, and the nozzle cap puts it on the scalp rather than in your palm.
+Onion oil is not pressed from onions. It is a carrier oil infused with onion extract and, in a good blend, a few other things that help the scalp. [Ours](/products/mark-khalis-onion-oil) is coconut and castor oil with red onion extract, black seed oil, fenugreek, curry leaf and vitamin E. The castor gives it body, the coconut keeps it from being sticky, and the nozzle cap puts it on the scalp rather than in your palm.
 
 ## How to apply it
 
@@ -148,7 +148,7 @@ Hair fall from a recent illness, from stopping a medicine, or after childbirth u
 
 ## Pair it with the right second oil
 
-Onion oil is for the scalp. For the lengths and ends, a light [coconut oil](/products/coconut-oil) after washing stops breakage, which is half of what people call hair fall. Together they cost less as the [Hair Care Kit](/products/hair-care-kit).`,
+Onion oil is for the scalp. For the lengths and ends, a light [coconut oil](/products/mark-khalis-coconut-oil) after washing stops breakage, which is half of what people call hair fall. Together they cost less as the [Hair Care Kit](/products/hair-care-kit).`,
   },
   {
     slug: "coconut-oil-vs-mustard-oil-for-hair",
@@ -164,7 +164,7 @@ Onion oil is for the scalp. For the lengths and ends, a light [coconut oil](/pro
 
 ## Coconut oil: light, for lengths and daily use
 
-[Coconut oil](/products/coconut-oil) is thin, absorbs fast and leaves no greasy feel. It sinks into the hair shaft rather than sitting on it, which is why it is the better oil for frizz, split ends and hair that breaks when combed. It is also the one to use on damp hair after washing, a few drops on the ends.
+[Coconut oil](/products/mark-khalis-coconut-oil) is thin, absorbs fast and leaves no greasy feel. It sinks into the hair shaft rather than sitting on it, which is why it is the better oil for frizz, split ends and hair that breaks when combed. It is also the one to use on damp hair after washing, a few drops on the ends.
 
 - Best for: dry lengths, frizz, daily use, children, anyone who oils before work.
 - Season: all year. In winter it sets solid in the bottle; warm it in your hands.
@@ -172,7 +172,7 @@ Onion oil is for the scalp. For the lengths and ends, a light [coconut oil](/pro
 
 ## Mustard oil: heavy, for the scalp and winter
 
-[Mustard oil](/products/mustard-oil) is thick and warming. It stays on the scalp and softens it, which is what a dry, flaky, itchy scalp needs, and its warmth is why it is the winter massage oil. It is too heavy for daily use on the lengths and it takes two washes to remove.
+[Mustard oil](/products/mark-khalis-mustard-oil) is thick and warming. It stays on the scalp and softens it, which is what a dry, flaky, itchy scalp needs, and its warmth is why it is the winter massage oil. It is too heavy for daily use on the lengths and it takes two washes to remove.
 
 - Best for: dry or flaky scalp, hair fall at the root, weekly deep oiling, winter.
 - Season: best in winter; once a week in summer is plenty.
@@ -180,7 +180,7 @@ Onion oil is for the scalp. For the lengths and ends, a light [coconut oil](/pro
 
 ## By problem
 
-- **Hair fall:** mustard oil weekly on the scalp, or [onion oil](/products/onion-oil) two or three times a week if the fall is more than a few weeks old.
+- **Hair fall:** mustard oil weekly on the scalp, or [onion oil](/products/mark-khalis-onion-oil) two or three times a week if the fall is more than a few weeks old.
 - **Frizz and breakage:** coconut on damp ends every wash.
 - **Dandruff and itch:** mustard oil massage weekly, left an hour.
 - **Dull hair:** coconut through the lengths the night before washing.
@@ -258,7 +258,7 @@ A 25 g tin of [MARK Balm](/products/mark-balm) is Rs 250 and lasts a family mont
 
 ## Warm massage for the feet and hands
 
-A ten-minute massage moves blood through the small vessels that the day has squeezed shut. Warm [mustard oil](/products/mustard-oil) works well: sit with the foot on the opposite knee, press the thumbs into the sole from heel to toes, then squeeze each toe. Do the calves with long strokes towards the knee. For hands, the same from wrist to fingertips.
+A ten-minute massage moves blood through the small vessels that the day has squeezed shut. Warm [mustard oil](/products/mark-khalis-mustard-oil) works well: sit with the foot on the opposite knee, press the thumbs into the sole from heel to toes, then squeeze each toe. Do the calves with long strokes towards the knee. For hands, the same from wrist to fingertips.
 
 If you want warmth that lasts after the massage, a small amount of [MARK Iodex](/products/mark-iodex) on the calves or forearms keeps the area warm for an hour. Never on the soles right before walking, and never on broken skin.
 
@@ -284,13 +284,13 @@ None of those are things an oil addresses. A warm massage still feels good, but 
     lang: "en",
     translationSlug: "josh-herbal-massage-oil-for-men-guide-ur",
     daysAgo: 2,
-    body: `[Josh](/products/josh-mens-herbal-oil) is the product people ask us the most questions about, usually in a low voice. This page answers them all, in plain words, so that nobody has to ask.
+    body: `[Josh](/products/mark-josh-mens-herbal-oil) is the product people ask us the most questions about, usually in a low voice. This page answers them all, in plain words, so that nobody has to ask.
 
 ## What Josh is
 
 Josh is a concentrated herbal massage oil for adult men. It is a warming oil: a few drops massaged in produce a steady heat in the skin within a minute that lasts twenty to thirty minutes. It is used as part of a couples' massage routine, and it is for external use only.
 
-It is made in Pakistan in small batches. The base is sesame oil, which carries black seed (kalonji) oil, ginger extract, clove oil and cinnamon bark oil, with vitamin E to keep it fresh. There is no mineral oil, no artificial fragrance and no colour. The full list is on the [product page](/products/josh-mens-herbal-oil).
+It is made in Pakistan in small batches. The base is sesame oil, which carries black seed (kalonji) oil, ginger extract, clove oil and cinnamon bark oil, with vitamin E to keep it fresh. There is no mineral oil, no artificial fragrance and no colour. The full list is on the [product page](/products/mark-josh-mens-herbal-oil).
 
 ## How to use it
 
@@ -307,7 +307,7 @@ Warmth, then a spreading heat. A tingling is normal. A sting is not: if it sting
 
 ## How long a bottle lasts
 
-Josh is sold in 15 ml because it is concentrated. At five drops a use, one bottle is roughly forty to fifty uses. For most men that is two to three months. The price is [Rs 1,750](/products/josh-mens-herbal-oil), which works out to well under Rs 50 a use.
+Josh is sold in 15 ml because it is concentrated. At five drops a use, one bottle is roughly forty to fifty uses. For most men that is two to three months. The price is [Rs 1,750](/products/mark-josh-mens-herbal-oil), which works out to well under Rs 50 a use.
 
 ## The questions we are asked
 
@@ -323,7 +323,7 @@ Josh is sold in 15 ml because it is concentrated. At five drops a use, one bottl
 
 ## Order it
 
-Add it to your cart on the [product page](/products/josh-mens-herbal-oil), or press the WhatsApp button there and we will place the order for you. Together with a bottle of mustard oil for a full-body massage, it is cheaper as the [Josh Massage Kit](/products/josh-massage-kit).`,
+Add it to your cart on the [product page](/products/mark-josh-mens-herbal-oil), or press the WhatsApp button there and we will place the order for you. Together with a bottle of mustard oil for a full-body massage, it is cheaper as the [Josh Massage Kit](/products/josh-massage-kit).`,
   },
   {
     slug: "essential-oils-vs-carrier-oils-vs-herbal-massage-oils",
@@ -339,7 +339,7 @@ Add it to your cart on the [product page](/products/josh-mens-herbal-oil), or pr
 
 ## Carrier oils
 
-A carrier oil is the oil pressed from a seed, nut or fruit: [mustard](/products/mustard-oil), [coconut](/products/coconut-oil), sesame, almond, olive, castor. It is mild, it can go on the skin neat, and it is what you use in quantity for hair oiling and body massage. The name comes from its job in blends: it carries the small amount of something stronger.
+A carrier oil is the oil pressed from a seed, nut or fruit: [mustard](/products/mark-khalis-mustard-oil), [coconut](/products/mark-khalis-coconut-oil), sesame, almond, olive, castor. It is mild, it can go on the skin neat, and it is what you use in quantity for hair oiling and body massage. The name comes from its job in blends: it carries the small amount of something stronger.
 
 - Use: hair, skin, massage, baby massage.
 - Amount: tablespoons.
@@ -355,7 +355,7 @@ An essential oil is the concentrated aromatic extract of a plant: clove, eucalyp
 
 ## Herbal massage oils
 
-A herbal massage oil is a carrier oil that has been infused with herbs, or blended with small amounts of essential oils, so it does a specific job. [Onion oil](/products/onion-oil) is coconut and castor oil infused with onion extract and fenugreek for the scalp. [Josh](/products/josh-mens-herbal-oil) is sesame oil carrying ginger, clove and cinnamon for a warming massage. The carrier makes it safe to use in quantity; the herbs make it do something.
+A herbal massage oil is a carrier oil that has been infused with herbs, or blended with small amounts of essential oils, so it does a specific job. [Onion oil](/products/mark-khalis-onion-oil) is coconut and castor oil infused with onion extract and fenugreek for the scalp. [Josh](/products/mark-josh-mens-herbal-oil) is sesame oil carrying ginger, clove and cinnamon for a warming massage. The carrier makes it safe to use in quantity; the herbs make it do something.
 
 - Use: whatever the blend was made for. Read the label.
 - Amount: drops for concentrated blends, tablespoons for light ones.

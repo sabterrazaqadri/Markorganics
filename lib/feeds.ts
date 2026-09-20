@@ -26,6 +26,23 @@ function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+/**
+ * Descriptions are written in the admin's rich-text box and may carry its
+ * markdown-ish emphasis. Merchant Center reads the description as plain text
+ * and shows the asterisks verbatim, so they are stripped here.
+ */
+function plainText(s: string): string {
+  return s
+    .replace(/\*\*([\s\S]+?)\*\*/g, "$1")
+    .replace(/(^|\s)\*(\S[^*]*?)\*(?=\s|$)/g, "$1$2")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/\[(.+?)\]\((.+?)\)/g, "$1")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 const GOOGLE_CATEGORY: Record<string, string> = {
   oils: "Health &amp; Beauty &gt; Personal Care &gt; Cosmetics &gt; Hair Care &gt; Hair Oil",
   relief: "Health &amp; Beauty &gt; Health Care &gt; Medicine &amp; Drugs",
@@ -53,10 +70,10 @@ export function buildProductFeed(
   const items = products.flatMap((p) =>
     p.variants.map((v) => {
       const link = `${SITE_URL}/products/${p.slug}`;
-      const image = p.images[0] ? absoluteImageUrl(p.images[0]) : `${SITE_URL}/hero-bottle.png`;
+      const image = p.images[0] ? absoluteImageUrl(p.images[0]) : `${SITE_URL}/hero/range.webp`;
       const extra = p.images
         .slice(1, 10)
-        .map((i) => `      <g:additional_image_link>${esc(SITE_URL + i)}</g:additional_image_link>`);
+        .map((i) => `      <g:additional_image_link>${esc(absoluteImageUrl(i))}</g:additional_image_link>`);
       const onSale = Boolean(v.compareAtPaisa && v.compareAtPaisa > v.pricePaisa);
       const basePrice = onSale ? v.compareAtPaisa! : v.pricePaisa;
       const salePrice = onSale ? `      <g:sale_price>${paisaToDecimal(v.pricePaisa)} PKR</g:sale_price>` : "";
@@ -68,7 +85,7 @@ export function buildProductFeed(
         "    <item>",
         `      <g:id>${esc(v.sku)}</g:id>`,
         `      <g:title>${esc(`${p.name} ${v.label}`)}</g:title>`,
-        `      <g:description>${esc(p.longDescription || p.shortDescription)}</g:description>`,
+        `      <g:description>${esc(plainText(p.longDescription || p.shortDescription))}</g:description>`,
         `      <g:link>${esc(link)}</g:link>`,
         `      <g:image_link>${esc(image)}</g:image_link>`,
         ...extra,
