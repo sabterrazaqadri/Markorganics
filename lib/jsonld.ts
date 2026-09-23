@@ -1,4 +1,12 @@
-import { BRAND_NAME, DELIVERY_FEE_PAISA, SITE_URL, SUPPORT_EMAIL, WHATSAPP_NUMBER, absoluteImageUrl } from "@/config/commerce";
+import {
+  BRAND_NAME,
+  DELIVERY_FEE_PAISA,
+  SITE_URL,
+  SUPPORT_EMAIL,
+  WHATSAPP_NUMBER,
+  absoluteImageUrl,
+  absoluteUrl,
+} from "@/config/commerce";
 import type { ProductFaq, ProductWithVariants, Review } from "@/lib/db/schema";
 import type { RatingSummary } from "@/lib/reviews";
 import { paisaToDecimal } from "@/lib/money";
@@ -16,22 +24,34 @@ export function organizationJsonLd() {
   };
 }
 
+/** ISO 8601 calendar date (YYYY-MM-DD), the form Google reads for offer dates. */
+function isoDate(value: Date | string): string {
+  return new Date(value).toISOString().slice(0, 10);
+}
+
 /**
  * Product / Offer markup for the Rich Results test.
  *
  * Required properties (name, image, offers.price, offers.priceCurrency,
- * offers.availability) are all present. The rest — priceValidUntil, the
- * shipping rate and the return policy — are the properties Search Console
- * reports as "non-critical issues" on merchant listings, so they are filled
- * in rather than left to warn.
+ * offers.availability) are all present. The rest — validFrom, priceValidUntil,
+ * itemCondition, the shipping rate and the return policy — are the properties
+ * Search Console reports as "non-critical issues" on merchant listings, so
+ * they are filled in rather than left to warn.
+ *
+ * `offers.url` is a plain absolute string built through the URL parser: the
+ * origin once shipped with a stray space in it and Search Console read the
+ * result as an invalid value type for the field.
  *
  * `sku` is the same variant SKU used as the offer id in every product feed,
  * so Google sees one offer, not several.
  */
 export function productJsonLd(p: ProductWithVariants, social?: { summary: RatingSummary; reviews: Review[] }) {
-  const url = `${SITE_URL}/products/${p.slug}`;
+  const url = absoluteUrl(`products/${p.slug}`);
   // Prices are stable; a year out is the conventional horizon for this field.
   const priceValidUntil = new Date(Date.now() + 365 * 24 * 3600_000).toISOString().slice(0, 10);
+  // When the offer started: the variant row's own creation date, or the
+  // product's for a variant that somehow carries none.
+  const productValidFrom = isoDate(p.createdAt);
 
   const shippingDetails = {
     "@type": "OfferShippingDetails",
@@ -64,6 +84,7 @@ export function productJsonLd(p: ProductWithVariants, social?: { summary: Rating
     url,
     priceCurrency: "PKR",
     price: paisaToDecimal(v.pricePaisa),
+    validFrom: v.createdAt ? isoDate(v.createdAt) : productValidFrom,
     priceValidUntil,
     availability: v.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
     itemCondition: "https://schema.org/NewCondition",
@@ -131,7 +152,7 @@ export function collectionJsonLd(opts: {
     "@type": "CollectionPage",
     name: opts.name,
     description: opts.description,
-    url: `${SITE_URL}${opts.path}`,
+    url: absoluteUrl(opts.path),
     isPartOf: { "@type": "WebSite", name: BRAND_NAME, url: SITE_URL },
     mainEntity: {
       "@type": "ItemList",
@@ -140,7 +161,7 @@ export function collectionJsonLd(opts: {
         "@type": "ListItem",
         position: i + 1,
         name: p.name,
-        url: `${SITE_URL}/products/${p.slug}`,
+        url: absoluteUrl(`products/${p.slug}`),
       })),
     },
   };
@@ -154,7 +175,7 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
       "@type": "ListItem",
       position: i + 1,
       name: it.name,
-      item: `${SITE_URL}${it.path}`,
+      item: absoluteUrl(it.path),
     })),
   };
 }

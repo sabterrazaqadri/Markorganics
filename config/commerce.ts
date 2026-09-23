@@ -46,3 +46,16 @@ export function deliveryFeeFor(subtotalPaisa: number): number {
 export function absoluteImageUrl(src: string): string {
   return /^https?:\/\//.test(src) ? src : `${SITE_URL}${src}`;
 }
+
+/**
+ * Absolute URL for a site-relative path, as a plain string.
+ *
+ * Structured data will not accept a relative path, and Search Console read
+ * the old whitespace-broken origin as an invalid `url` type, so origin and
+ * path are both scrubbed of whitespace and then joined by the URL parser —
+ * a malformed link fails here rather than silently in the markup.
+ */
+export function absoluteUrl(path: string): string {
+  const rel = path.replace(/\s+/g, "").replace(/^\/+/, "");
+  return new URL(rel, `${SITE_URL.replace(/\s+/g, "")}/`).toString();
+}
