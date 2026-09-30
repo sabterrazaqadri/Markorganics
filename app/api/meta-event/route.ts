@@ -64,6 +64,11 @@ export async function POST(req: NextRequest) {
   const origin = req.nextUrl.origin;
   const sourceUrl = input.sourceUrl && input.sourceUrl.startsWith(origin) ? input.sourceUrl : req.headers.get("referer") ?? undefined;
 
+  const fbp = req.cookies.get("_fbp")?.value ?? null;
+  const fbc = req.cookies.get("_fbc")?.value ?? null;
+  // eslint-disable-next-line no-console
+  console.log("[META-DEBUG] /api/meta-event", { event: input.event, eventId: input.eventId, hasFbp: Boolean(fbp), hasFbc: Boolean(fbc), sourceUrl });
+
   try {
     const result = await sendMetaEvent({
       event: input.event as (typeof TRACKED_EVENTS)[number],
@@ -75,8 +80,8 @@ export async function POST(req: NextRequest) {
       identity: {},
       clientIpAddress: ip,
       clientUserAgent: req.headers.get("user-agent"),
-      fbp: req.cookies.get("_fbp")?.value ?? null,
-      fbc: req.cookies.get("_fbc")?.value ?? null,
+      fbp,
+      fbc,
     });
     return result.ok ? ok({ dryRun: result.dryRun }) : skipped(result.message);
   } catch (err) {

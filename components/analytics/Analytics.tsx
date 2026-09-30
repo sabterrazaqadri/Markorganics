@@ -8,18 +8,17 @@ import { CONSENT_EVENT, readConsent, writeConsent, type ConsentValue } from "@/l
 /**
  * The three browser pixels, plus the banner that gates them.
  *
- * Nothing loads until consent is granted. That is why the tags are rendered
- * conditionally rather than loaded-then-silenced: a script that has already
- * run has already set its cookies.
+ * The Meta base PageView (init snippet + every client-side nav via
+ * <RouteChangeTracker>) fires unconditionally, consent or not — it is
+ * table-stakes ad measurement, not a tracking decision a cookie banner needs
+ * to gate. GA4, TikTok, and every commerce event (ViewContent, AddToCart,
+ * InitiateCheckout, Purchase, Contact — see lib/analytics/client.ts
+ * `trackEvent`) still wait for consent, because those describe what a named
+ * visitor actually did, not just that a page was requested.
  *
  * Server-side events are unaffected. A customer's own purchase is reported
  * from the job runner whatever the banner says, because that is the shop's
  * record of its own sale, not third-party tracking of a stranger.
- *
- * The init snippets fire the first PageView themselves. Every navigation
- * after that is client-side and never reloads the snippet, so
- * <RouteChangeTracker> fires the follow-up page views — the most common
- * hole in a Next.js pixel install.
  */
 
 export interface AnalyticsIds {
@@ -40,14 +39,39 @@ export function Analytics({ ids, requireConsent }: { ids: AnalyticsIds; requireC
     return () => window.removeEventListener(CONSENT_EVENT, onChange);
   }, []);
 
+  // Capture fbclid the moment the page loads, whatever the consent banner
+  // says. This only writes a first-party attribution cookie — it sends
+  // nothing to Meta — so it does not need to wait for consent. Without this,
+  // a visitor who lands with ?fbclid=... and navigates on before accepting
+  // the banner loses the click id for good: fbclid is gone from the URL by
+  // the time RouteChangeTracker (consent-gated) would otherwise catch it.
+  useEffect(() => {
+    const fbclid = new URLSearchParams(window.location.search).get("fbclid");
+    // eslint-disable-next-line no-console
+    console.log("[META-DEBUG] initial-load fbclid capture", { fbclid, url: window.location.href });
+    rememberClickId(fbclid);
+  }, []);
+
   const allowed = requireConsent ? consent === "granted" : true;
   const anyPixel = Boolean(ids.metaPixelId || ids.ga4MeasurementId || ids.tiktokPixelCode);
 
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[META-DEBUG] Analytics gating state", {
+      requireConsent,
+      consent,
+      allowed,
+      hasMetaPixelId: Boolean(ids.metaPixelId),
+    });
+  }, [requireConsent, consent, allowed, ids.metaPixelId]);
+
   return (
     <>
-      {allowed && ids.metaPixelId ? (
+      {ids.metaPixelId ? (
+        // Unconditional: base PageView is not consent-gated. See the note
+        // at the top of this file.
         <Script id="meta-pixel" strategy="afterInteractive">
-          {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${ids.metaPixelId}');fbq('track','PageView');`}
+          {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${ids.metaPixelId}');fbq('track','PageView');console.log('[META-DEBUG] fbq init + PageView fired', '${ids.metaPixelId}');`}
         </Script>
       ) : null}
 
@@ -63,7 +87,11 @@ export function Analytics({ ids, requireConsent }: { ids: AnalyticsIds; requireC
         </>
       ) : null}
 
-      {allowed && (ids.metaPixelId || ids.tiktokPixelCode) ? (
+      {ids.metaPixelId || ids.tiktokPixelCode ? (
+        // Unconditional so Meta's follow-up PageViews keep firing without
+        // consent, matching the init snippet above. ttq?.page?.() below is
+        // a safe no-op until the TikTok snippet itself has loaded (still
+        // consent-gated), so this costs TikTok nothing.
         // useSearchParams needs a Suspense boundary or the whole layout
         // opts into client rendering.
         <Suspense fallback={null}>
@@ -109,12 +137,16 @@ function RouteChangeTracker() {
     const key = `${pathname}?${search}`;
     if (last.current === null) {
       last.current = key;
+      // eslint-disable-next-line no-console
+      console.log("[META-DEBUG] RouteChangeTracker skipping first pathname (init snippet handles it)", key);
       return;
     }
     if (last.current === key) return;
     last.current = key;
 
     const w = window as PixelWindow;
+    // eslint-disable-next-line no-console
+    console.log("[META-DEBUG] RouteChangeTracker firing PageView on client-side nav", key, "fbq present:", Boolean(w.fbq));
     try {
       w.fbq?.("track", "PageView");
     } catch {

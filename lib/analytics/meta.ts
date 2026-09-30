@@ -82,6 +82,17 @@ export async function sendMetaEvent(input: CapiInput): Promise<{ ok: boolean; me
     ...(creds.values.testEventCode ? { test_event_code: creds.values.testEventCode } : {}),
   };
 
+  // eslint-disable-next-line no-console
+  console.log("[META-DEBUG] sendMetaEvent", {
+    event: META_EVENT_NAME[input.event],
+    eventId: input.eventId,
+    pixelId,
+    hasFbp: Boolean(userData.fbp),
+    hasFbc: Boolean(userData.fbc),
+    dryRun: creds.dryRun,
+    testEventCode: creds.values.testEventCode || null,
+  });
+
   const result = await callProvider<{ events_received?: number; messages?: unknown[] }>({
     provider: "meta",
     operation: `capi:${input.event}`,
