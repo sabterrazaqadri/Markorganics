@@ -1,4 +1,4 @@
-export type Family = "oils" | "relief" | "home";
+export type Family = "oils" | "relief" | "seeds" | "capsules" | "herbal";
 
 export interface FamilyMeta {
   slug: Family;
@@ -34,20 +34,40 @@ export const FAMILIES: Record<Family, FamilyMeta> = {
     border: "border-band-care",
     hex: "#2E6A65",
   },
-  home: {
-    slug: "home",
-    name: "Home",
-    heading: "Laundry and home",
-    blurb: "Liquid neel that keeps whites white without stains or clumps.",
+  seeds: {
+    slug: "seeds",
+    name: "Seeds",
+    heading: "Seeds and superfoods",
+    blurb: "Pure chia and flax (alsi) seeds, packed fresh with nothing added.",
+    band: "bg-band-seed",
+    text: "text-band-seed",
+    border: "border-band-seed",
+    hex: "#5B6B1E",
+  },
+  capsules: {
+    slug: "capsules",
+    name: "Capsules",
+    heading: "Herbal capsules",
+    blurb: "Ashwagandha, ginseng and moringa in easy daily capsules.",
     band: "bg-band-home",
     text: "text-band-home",
     border: "border-band-home",
     hex: "#2C3C8C",
   },
+  herbal: {
+    slug: "herbal",
+    name: "Herbal",
+    heading: "Herbal remedies",
+    blurb: "Pure Himalayan shilajit and other traditional herbal remedies.",
+    band: "bg-band-herb",
+    text: "text-band-herb",
+    border: "border-band-herb",
+    hex: "#7A3E22",
+  },
 };
 
-export const FAMILY_ORDER: Family[] = ["oils", "relief", "home"];
+export const FAMILY_ORDER: Family[] = ["oils", "relief", "seeds", "capsules", "herbal"];
 
 export function isFamily(value: string | null | undefined): value is Family {
-  return value === "oils" || value === "relief" || value === "home";
+  return (FAMILY_ORDER as string[]).includes(value ?? "");
 }

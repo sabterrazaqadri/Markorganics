@@ -16,13 +16,15 @@ export async function Footer() {
       <div className="flex" aria-hidden="true">
         <span className="band bg-band-oil" />
         <span className="band bg-band-care" />
+        <span className="band bg-band-seed" />
         <span className="band bg-band-home" />
+        <span className="band bg-band-herb" />
       </div>
       <div className="container-x grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Logo />
           <p className="mt-4 text-sm text-ink-soft">
-            Everyday oils, balms and laundry blue for Pakistani homes. Cash on delivery, nationwide.
+            Everyday oils, balms, seeds and herbal remedies for Pakistani homes. Cash on delivery, nationwide.
           </p>
         </div>
         <nav aria-label="Shop">
@@ -95,6 +97,11 @@ export async function Footer() {
             <li>
               <Link href="/privacy" className="hover:text-ink hover:underline underline-offset-4">
                 Privacy
+              </Link>
+            </li>
+            <li>
+              <Link href="/medical-disclaimer" className="hover:text-ink hover:underline underline-offset-4">
+                Medical disclaimer
               </Link>
             </li>
             <li>

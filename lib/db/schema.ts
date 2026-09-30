@@ -14,7 +14,7 @@ import {
 
 /* ------------------------------------------------------------------ enums */
 
-export const productFamilyEnum = pgEnum("product_family", ["oils", "relief", "home"]);
+export const productFamilyEnum = pgEnum("product_family", ["oils", "relief", "seeds", "capsules", "herbal"]);
 export const orderStatusEnum = pgEnum("order_status", [
   "pending",
   "confirmed",

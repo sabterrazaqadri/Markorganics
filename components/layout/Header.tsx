@@ -8,7 +8,9 @@ import { LangToggle } from "@/components/i18n/LangToggle";
 const familyUnderline: Record<string, string> = {
   oils: "after:bg-band-oil",
   relief: "after:bg-band-care",
-  home: "after:bg-band-home",
+  seeds: "after:bg-band-seed",
+  capsules: "after:bg-band-home",
+  herbal: "after:bg-band-herb",
 };
 
 /** Used until someone builds a header menu in the admin. */

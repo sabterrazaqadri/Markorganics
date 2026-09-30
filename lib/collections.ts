@@ -44,16 +44,40 @@ export const COLLECTIONS: Record<Family, CollectionCopy> = {
     ],
     ogLine: "Balm and deep heat rub",
   },
-  home: {
-    title: "Liquid neel that whitens without blue patches",
+  seeds: {
+    title: "Chia seeds and flax seeds (alsi), pure and unprocessed",
     description:
-      "MARK Liquid Neel dissolves fully in the rinse water, so shirts and sheets come back white with no spotting. One capful per bucket. Cash on delivery across Pakistan.",
-    heading: "Laundry and home",
-    standfirst: "Neel that mixes properly, so whites come back white and not blotchy.",
+      "MARK Chia Seeds and MARK Flax Seeds (alsi): pure, unprocessed and packed fresh. Fibre, omega-3 and plant protein for every day. Cash on delivery across Pakistan.",
+    heading: "Seeds and superfoods",
+    standfirst: "Small seeds that do a lot, packed pure with nothing added.",
     body: [
-      "Powder neel has one persistent problem: it never fully dissolves. Undissolved grains settle on wet cotton and leave the blue spots that ruin a good shirt. Making it a liquid solves that at the source, because it disperses evenly through the rinse water before the cloth ever goes in.",
-      "A single capful is enough for a full bucket, so one bottle covers weeks of washing. It is safe on cotton, linen and blends, and works by hand or in a machine rinse cycle. There is no bleach in it, so it whitens without weakening the fabric.",
+      "Chia and flax are two of the easiest ways to add fibre, plant omega-3 and protein to an ordinary Pakistani breakfast. Chia swells into a soft gel in water or milk and keeps you full for hours. Flax, alsi, is best ground and stirred into oats, yogurt, lassi or roti dough, and it is what goes into winter pinni.",
+      "Both are sold exactly as they come: no roasting, no coating, no preservatives. Start with a tablespoon a day, soak chia before you eat it, grind flax just before you use it, and drink plenty of water with either.",
     ],
-    ogLine: "Liquid laundry blue",
+    ogLine: "Chia and flax (alsi) seeds",
+  },
+  capsules: {
+    title: "Herbal capsules: ashwagandha, ginseng and moringa",
+    description:
+      "MARK Ashwagandha, Ginseng and Moringa capsules: pure herbs in an easy daily dose for calm, energy, focus and immunity. Cash on delivery across Pakistan.",
+    heading: "Herbal capsules",
+    standfirst: "Traditional herbs in a measured daily capsule, without the bitter powder.",
+    body: [
+      "Ashwagandha is the herb for stress and sleep, ginseng for steady energy and focus, and moringa for everyday nutrition and immunity. Each is filled from the pure root or leaf, so the dose is the same every day and there is nothing to measure or mix.",
+      "Herbs work slowly. Take them after a meal and give them three to four weeks. If you are pregnant or breastfeeding, have a medical condition or take regular medicine, ask your doctor first. None of these capsules is a medicine; read our medical disclaimer.",
+    ],
+    ogLine: "Ashwagandha, ginseng and moringa",
+  },
+  herbal: {
+    title: "Pure Himalayan shilajit and herbal remedies",
+    description:
+      "MARK Pure Shilajit Resin: 100% Himalayan salajeet for energy, stamina and strength, from 20g to 100g jars. Cash on delivery across Pakistan.",
+    heading: "Herbal remedies",
+    standfirst: "Old remedies, sourced carefully and sold pure.",
+    body: [
+      "Shilajit, salajeet, is a mineral-rich resin from high Himalayan rock that has been used for centuries for energy, stamina and strength. Ours is pure resin with nothing added. A pea-sized amount dissolved in warm water or milk each morning is a full serving, so even the smallest jar lasts weeks.",
+      "Real resin is firm in the cold and sticky in the heat; that is how you know it is not a powder or a pill. Avoid it in pregnancy, and talk to a doctor first if you have a heart condition, high blood pressure or gout.",
+    ],
+    ogLine: "Pure Himalayan shilajit",
   },
 };

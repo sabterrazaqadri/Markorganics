@@ -46,7 +46,9 @@ function plainText(s: string): string {
 const GOOGLE_CATEGORY: Record<string, string> = {
   oils: "Health &amp; Beauty &gt; Personal Care &gt; Cosmetics &gt; Hair Care &gt; Hair Oil",
   relief: "Health &amp; Beauty &gt; Health Care &gt; Medicine &amp; Drugs",
-  home: "Home &amp; Garden &gt; Household Supplies &gt; Laundry Supplies",
+  seeds: "Food, Beverages &amp; Tobacco &gt; Food Items &gt; Nuts &amp; Seeds",
+  capsules: "Health &amp; Beauty &gt; Health Care &gt; Fitness &amp; Nutrition &gt; Vitamins &amp; Supplements",
+  herbal: "Health &amp; Beauty &gt; Health Care &gt; Fitness &amp; Nutrition &gt; Vitamins &amp; Supplements",
 };
 
 const FEED_TITLE: Record<FeedTarget, string> = {

@@ -36,6 +36,20 @@
       "when": 1789690462723,
       "tag": "0004_third_sister_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790752897350,
+      "tag": "0005_seeds_capsules_herbal",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790752913466,
+      "tag": "0006_drop_home_family",
+      "breakpoints": true
     }
   ]
 }

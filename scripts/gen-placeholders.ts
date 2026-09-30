@@ -105,7 +105,7 @@ async function main() {
   const story = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
     <rect width="1200" height="800" fill="#F4F1EA"/>
     <g>${[0, 1, 2].map((i) => {
-      const fams = ["oils", "relief", "home"] as const;
+      const fams = ["oils", "relief", "capsules"] as const;
       const x = 260 + i * 340;
       return `<rect x="${x - 60}" y="240" width="120" height="360" rx="24" fill="#FFFFFF" stroke="${RULE}" stroke-width="3"/><rect x="${x - 60}" y="360" width="120" height="110" fill="${FAMILIES[fams[i]].hex}"/><rect x="${x - 26}" y="200" width="52" height="46" rx="6" fill="${INK}"/>`;
     }).join("")}</g>
@@ -116,7 +116,7 @@ async function main() {
   const logo = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="32" viewBox="0 0 180 32" role="img" aria-label="MARKORGANIC">
   <rect x="0" y="4" width="6" height="24" fill="${FAMILIES.oils.hex}"/>
   <rect x="8" y="4" width="6" height="24" fill="${FAMILIES.relief.hex}"/>
-  <rect x="16" y="4" width="6" height="24" fill="${FAMILIES.home.hex}"/>
+  <rect x="16" y="4" width="6" height="24" fill="${FAMILIES.capsules.hex}"/>
   <text x="30" y="23" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="19" letter-spacing="-0.5" fill="${INK}">MARKORGANIC</text>
 </svg>`;
   await writeFile(path.join(PUBLIC, "logo.svg"), logo);
@@ -126,7 +126,7 @@ async function main() {
   <rect width="32" height="32" rx="6" fill="${PAPER}"/>
   <rect x="5" y="6" width="6" height="20" fill="${FAMILIES.oils.hex}"/>
   <rect x="13" y="6" width="6" height="20" fill="${FAMILIES.relief.hex}"/>
-  <rect x="21" y="6" width="6" height="20" fill="${FAMILIES.home.hex}"/>
+  <rect x="21" y="6" width="6" height="20" fill="${FAMILIES.capsules.hex}"/>
 </svg>`;
   await sharp(Buffer.from(mark(64))).png().toFile(path.join(ROOT, "app", "icon.png"));
   await sharp(Buffer.from(mark(180))).resize(180, 180).png().toFile(path.join(ROOT, "app", "apple-icon.png"));

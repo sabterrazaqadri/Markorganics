@@ -3,7 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { productInputSchema, type ProductInput } from "@/lib/validation/product";
-import { FAMILIES, FAMILY_ORDER } from "@/lib/catalog";
+import { FAMILIES, FAMILY_ORDER, type Family } from "@/lib/catalog";
 import { PRODUCT_STATUSES, type MetafieldType, type ProductStatus } from "@/lib/db/schema";
 import { PRODUCT_STATUS_LABEL } from "./ui";
 import { ErrorNote, TagInput, useAction } from "./client-ui";
@@ -57,7 +57,7 @@ export interface UrduFormValues {
 export interface ProductFormValues {
   name: string;
   slug: string;
-  family: "oils" | "relief" | "home";
+  family: Family;
   status: ProductStatus;
   productType: string;
   vendor: string;

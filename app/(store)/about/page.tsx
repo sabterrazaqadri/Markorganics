@@ -18,14 +18,14 @@ export default function AboutPage() {
     <PageBody slug="about" fallbackTitle="About MARKORGANIC">
       <p>
         MARKORGANIC is a small Karachi company that makes the products a household actually uses every week: hair oil,
-        a balm for headaches and sore muscles, and neel for the laundry. Nothing on this site is a luxury item, and none
+        a balm for headaches and sore muscles, seeds for the breakfast table and herbal capsules. Nothing on this site is a luxury item, and none
         of it is priced like one.
       </p>
       <h2>How we make things</h2>
       <p>
         The oils are cold-pressed in small batches and filtered, not refined. The balms follow formulas that have been
-        used in Pakistani homes for decades. The neel is a liquid so it mixes properly. Where a product can be a single
-        ingredient, it is.
+        used in Pakistani homes for decades. The seeds and herbs are packed pure, with nothing added. Where a product can
+        be a single ingredient, it is.
       </p>
       <h2>The colour bands</h2>
       <p>Every product family has a colour band printed across the label, the same way the band runs across this site.</p>

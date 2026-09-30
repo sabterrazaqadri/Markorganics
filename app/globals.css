@@ -9,7 +9,9 @@
   --color-band-oil: #c1841b;
   --color-band-oil-ink: #8a5b0e; /* darker oil tone for small text: 5.9:1 on paper */
   --color-band-care: #2e6a65;
-  --color-band-home: #2c3c8c;
+  --color-band-home: #2c3c8c; /* indigo, now the capsules band */
+  --color-band-seed: #5b6b1e;
+  --color-band-herb: #7a3e22;
   --color-danger: #a6362b;
   --color-success: #2e6a65;
 
@@ -186,6 +188,20 @@
   }
   .btn-band-home:hover:not(:disabled) {
     background: #233075;
+  }
+  .btn-band-seed {
+    background: var(--color-band-seed);
+    color: #fff;
+  }
+  .btn-band-seed:hover:not(:disabled) {
+    background: #4a5818;
+  }
+  .btn-band-herb {
+    background: var(--color-band-herb);
+    color: #fff;
+  }
+  .btn-band-herb:hover:not(:disabled) {
+    background: #63321b;
   }
   .btn-sm {
     min-height: 36px;

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PRODUCT_STATUSES } from "@/lib/db/schema";
+import { PRODUCT_STATUSES, productFamilyEnum } from "@/lib/db/schema";
 
 const slug = z
   .string()
@@ -98,7 +98,7 @@ export const metafieldInputSchema = z.object({
 export const productInputSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(80),
   slug,
-  family: z.enum(["oils", "relief", "home"]),
+  family: z.enum(productFamilyEnum.enumValues),
   status: z.enum(PRODUCT_STATUSES).default("active"),
   productType: z.string().trim().max(60).optional().transform((v) => v ?? ""),
   vendor: z.string().trim().max(60).optional().transform((v) => v ?? ""),

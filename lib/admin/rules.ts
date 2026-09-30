@@ -1,5 +1,6 @@
 import { sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
+import { FAMILIES, FAMILY_ORDER } from "@/lib/catalog";
 
 /**
  * Rule engine shared by automatic collections and customer segments.
@@ -144,11 +145,7 @@ export const PRODUCT_FIELDS: FieldDef[] = [
     key: "family",
     label: "Family",
     kind: "select",
-    options: [
-      { value: "oils", label: "Oils" },
-      { value: "relief", label: "Relief" },
-      { value: "home", label: "Home" },
-    ],
+    options: FAMILY_ORDER.map((f) => ({ value: f, label: FAMILIES[f].name })),
     operators: ["eq", "neq"],
     build: (op, v) =>
       op === "eq" ? sql`p.family::text = ${v}` : op === "neq" ? sql`p.family::text <> ${v}` : null,

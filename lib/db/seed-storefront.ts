@@ -1,4 +1,5 @@
 import type { ProductFaq, ProductI18nUr } from "@/lib/db/schema";
+import type { Family } from "@/lib/catalog";
 
 /**
  * Per-product FAQ pairs and Urdu copy, keyed on the product slug, plus the
@@ -190,7 +191,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
 export interface SeedBundle {
   name: string;
   slug: string;
-  family: "oils" | "relief" | "home";
+  family: Family;
   sku: string;
   label: string;
   priceRupees: number;

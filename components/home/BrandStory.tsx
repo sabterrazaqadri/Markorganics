@@ -24,7 +24,7 @@ export function BrandStory() {
         </p>
         <p className="mt-3 text-ink-soft">
           Each family has its own colour band so you can find the right bottle in a dim bathroom or a crowded cabinet.
-          Amber for oils, teal for relief, indigo for the home.
+          Amber for oils, teal for relief, olive for seeds, indigo for capsules and brown for herbal remedies.
         </p>
         <Link href="/about" className="btn btn-secondary mt-6">
           Read our story

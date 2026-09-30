@@ -4,6 +4,7 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { productVariants, products, type ProductStatus } from "@/lib/db/schema";
 import { toCsv } from "@/lib/csv";
+import { FAMILY_ORDER, type Family } from "@/lib/catalog";
 import { paisaToDecimal, rupeesToPaisa } from "@/lib/money";
 import { reevaluateAllAutomaticCollections } from "./collections";
 import { setStock } from "./inventory";
@@ -35,7 +36,7 @@ export const CSV_COLUMNS = [
   "variant_low_stock",
 ] as const;
 
-const FAMILIES = new Set(["oils", "relief", "home"]);
+const FAMILIES = new Set<string>(FAMILY_ORDER);
 const STATUSES = new Set<ProductStatus>(["active", "draft", "archived"]);
 
 /* ---------------------------------------------------------------- export */
@@ -270,7 +271,7 @@ export async function planImport(csv: string): Promise<ImportPlan> {
     const family = cell(raw, "family") || "oils";
     const existingProduct = productBySlug.get(handle);
     if (!existingProduct && !FAMILIES.has(family)) {
-      fail(`family must be one of oils, relief, home (got "${family}")`);
+      fail(`family must be one of ${FAMILY_ORDER.join(", ")} (got "${family}")`);
       continue;
     }
 
@@ -369,7 +370,7 @@ export async function applyImport(csv: string, userId?: string): Promise<ImportO
         const status = (cell(raw, "status") || "active") as ProductStatus;
         const fields = {
           name: cell(raw, "title") || handle,
-          family: (cell(raw, "family") || "oils") as "oils" | "relief" | "home",
+          family: (cell(raw, "family") || "oils") as Family,
           status,
           isArchived: status === "archived",
           productType: cell(raw, "product_type"),

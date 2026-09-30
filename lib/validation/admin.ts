@@ -6,6 +6,7 @@ import {
   ORDER_STATUSES,
   PRODUCT_STATUSES,
   USER_ROLES,
+  productFamilyEnum,
 } from "@/lib/db/schema";
 import { rulesSchema } from "@/lib/admin/rules";
 import { normalizePkPhone } from "@/lib/phone";
@@ -198,7 +199,7 @@ export const draftOrderSchema = z.object({
 export const productsFilterSchema = z.object({
   q: trimmed(80).optional(),
   status: z.enum(PRODUCT_STATUSES).optional(),
-  family: z.enum(["oils", "relief", "home"]).optional(),
+  family: z.enum(productFamilyEnum.enumValues).optional(),
   productType: trimmed(60).optional(),
   vendor: trimmed(60).optional(),
   tag: trimmed(40).optional(),

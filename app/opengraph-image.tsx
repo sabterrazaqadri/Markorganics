@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { BRAND_NAME } from "@/config/commerce";
 
-export const alt = `${BRAND_NAME} - oils, balms and neel for Pakistani homes`;
+export const alt = `${BRAND_NAME} - oils, balms, seeds and herbal remedies for Pakistani homes`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -27,7 +27,7 @@ export default function Image() {
         <div style={{ display: "flex", flexDirection: "column", padding: "72px 80px", flex: 1, justifyContent: "center" }}>
           <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1, color: "#5A5449" }}>{BRAND_NAME}</div>
           <div style={{ fontSize: 76, fontWeight: 700, letterSpacing: -3, lineHeight: 1.05, marginTop: 20, maxWidth: 980 }}>
-            Honest oils, balms and neel for every Pakistani home.
+            Honest oils, balms, seeds and herbs for every Pakistani home.
           </div>
           <div style={{ fontSize: 30, color: "#5A5449", marginTop: 28 }}>Cash on delivery, nationwide.</div>
         </div>

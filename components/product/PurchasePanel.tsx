@@ -37,13 +37,17 @@ interface Props {
 const bandBtn: Record<Family, string> = {
   oils: "btn-band-oil",
   relief: "btn-band-care",
-  home: "btn-band-home",
+  seeds: "btn-band-seed",
+  capsules: "btn-band-home",
+  herbal: "btn-band-herb",
 };
 
 const ringClass: Record<Family, string> = {
   oils: "border-band-oil bg-band-oil text-white",
   relief: "border-band-care bg-band-care text-white",
-  home: "border-band-home bg-band-home text-white",
+  seeds: "border-band-seed bg-band-seed text-white",
+  capsules: "border-band-home bg-band-home text-white",
+  herbal: "border-band-herb bg-band-herb text-white",
 };
 
 /** Thresholds below which a real number reads as weak rather than reassuring. */

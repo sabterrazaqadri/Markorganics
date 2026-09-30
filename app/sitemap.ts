@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
   // Pages with a hand-built route are already listed below.
-  const HANDWRITTEN = new Set(["about", "privacy", "shipping-returns", "faq", "contact", "track"]);
+  const HANDWRITTEN = new Set(["about", "privacy", "medical-disclaimer", "shipping-returns", "faq", "contact", "track"]);
 
   const statics: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
@@ -31,6 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/faq`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
     { url: `${SITE_URL}/shipping-returns`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${SITE_URL}/medical-disclaimer`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
     { url: `${SITE_URL}/track`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 

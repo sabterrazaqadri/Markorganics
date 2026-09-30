@@ -186,29 +186,4 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     sortOrder: 6,
     variants: [{ sku: "MRK-IDX-40", label: "40 g", priceRupees: 220, stock: 100 }],
   },
-  {
-    name: "MARK Liquid Neel",
-    slug: "mark-liquid-neel",
-    family: "home",
-    shortDescription: "Liquid laundry blue that whitens without patches or clumps.",
-    longDescription:
-      "MARK Liquid Neel brings back the white in shirts, dupattas and bed sheets that have turned yellow with washing. Because it is a liquid, it mixes fully into the rinse water and never leaves the blue spots that powder neel can. A capful is enough for a full bucket, so one bottle covers weeks of laundry. Safe for cotton, linen and blends, and safe for machine rinse cycles.",
-    howToUse: [
-      "Fill a bucket or the machine with clean rinse water.",
-      "Add one capful and stir well until the water is evenly blue.",
-      "Dip the washed whites and move them around for one minute.",
-      "Wring lightly and dry in the sun.",
-    ],
-    ingredients: "Water, ultramarine blue pigment, optical brightener, stabiliser. No bleach.",
-    benefits: [
-      "No blue patches, mixes fully in water",
-      "One cap per bucket, very economical",
-      "Safe for cotton and blends",
-      "Works in machines and by hand",
-    ],
-    images: ["/products/mark-liquid-neel-1.jpg", "/products/mark-liquid-neel-2.jpg"],
-    isBestseller: true,
-    sortOrder: 7,
-    variants: [{ sku: "MRK-NEEL-200", label: "200 ml", priceRupees: 250, stock: 200 }],
-  },
 ];

@@ -102,7 +102,7 @@ export default async function CollectionPage({ params }: Props) {
         {products.length === 0 ? (
           <div className="card mt-8 max-w-xl p-6">
             <p className="text-ink-soft">
-              There is nothing in {fam.name.toLowerCase()} yet. The other two families are stocked, or you can see
+              There is nothing in {fam.name.toLowerCase()} yet. The other families are stocked, or you can see
               everything on one page.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">

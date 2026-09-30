@@ -168,6 +168,15 @@ export default async function ProductPage({ params }: Props) {
             <TrustBadges paymentMethods={paymentMethodsOf(store)} paymentNote={store.paymentNote} />
 
             <ProductCopy product={product} />
+
+            <p className="mt-6 text-xs text-ink-soft">
+              This product is not intended to diagnose, treat, cure or prevent any disease. If you are pregnant,
+              breastfeeding, taking medicine or have a medical condition, ask your doctor before use. Read our{" "}
+              <Link href="/medical-disclaimer" className="underline underline-offset-2 hover:text-ink">
+                medical disclaimer
+              </Link>
+              .
+            </p>
           </div>
         </div>
 

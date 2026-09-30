@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
   // Old query-string family URLs are already shared and indexed, so keep them working.
   async redirects() {
     return [
-      ...(["oils", "relief", "home"] as const).map((family) => ({
+      ...(["oils", "relief", "seeds", "capsules", "herbal"] as const).map((family) => ({
         source: "/products",
         has: [{ type: "query" as const, key: "family", value: family }],
         // Next always forwards the matched query param to the destination, so the
@@ -29,7 +29,8 @@ const nextConfig: NextConfig = {
         destination: `/collections/${family}`,
         permanent: true,
       })),
-      // Products renamed in the admin; the original slugs were already shared
+      // The home family (liquid neel) was retired; its landing page was indexed.
+      { source: "/collections/home", destination: "/products", permanent: true },      // Products renamed in the admin; the original slugs were already shared
       // and linked from the journal, so they keep resolving.
       ...Object.entries({
         "josh-mens-herbal-oil": "mark-josh-mens-herbal-oil",

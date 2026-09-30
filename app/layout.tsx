@@ -32,11 +32,11 @@ const interTight = localFont({
 const baseMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${BRAND_NAME} - Hair oils, pain relief balm and liquid neel`,
+    default: `${BRAND_NAME} - Hair oils, pain relief, seeds and herbal capsules`,
     template: `%s | ${BRAND_NAME}`,
   },
   description:
-    "Everyday Pakistani household and personal-care products: cold-pressed hair oils, MARK Balm and Iodex for pain relief, and MARK Liquid Neel. Cash on delivery across Pakistan.",
+    "Everyday Pakistani household and personal-care products: cold-pressed hair oils, MARK Balm and Iodex for pain relief, chia and flax seeds, and herbal capsules and shilajit. Cash on delivery across Pakistan.",
   applicationName: BRAND_NAME,
   openGraph: {
     type: "website",
