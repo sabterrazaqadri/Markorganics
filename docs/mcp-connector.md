@@ -21,7 +21,11 @@ Before going live:
 3. Admin → Integrations → WhatsApp templates: add `mark_login_otp`, category
    authentication, status approved. Keep the WhatsApp integration out of dry run.
    (`WHATSAPP_OTP_TEMPLATE` overrides the template name.)
-4. Local development: `OAUTH_DEV_SHOW_OTP=1` shows the code on screen instead
+4. Directory review: set `OAUTH_REVIEW_PHONE` (e.g. `+923000000000`) and
+   `OAUTH_REVIEW_CODE` (6 digits) in Vercel. That one number signs in with the
+   fixed code, nothing is sent to WhatsApp, and its orders carry
+   "REVIEW TEST ORDER - do not ship" in the notes. Give both to reviewers.
+5. Local development: `OAUTH_DEV_SHOW_OTP=1` shows the code on screen instead
    of sending it (ignored in production).
 
 | Tool | What it does | Writes? |

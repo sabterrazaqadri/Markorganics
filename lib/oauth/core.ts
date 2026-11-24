@@ -215,8 +215,22 @@ export async function validateAuthorize(params: AuthorizeParams): Promise<Valida
 const otpPepper = () => process.env.ADMIN_SESSION_SECRET ?? "";
 const otpHash = (challengeId: string, code: string) => sha256(`${otpPepper()}:${challengeId}:${code}`);
 
+/**
+ * Directory reviewers (OpenAI, Anthropic) need a login that works without a
+ * real WhatsApp inbox. OAUTH_REVIEW_PHONE + OAUTH_REVIEW_CODE give exactly one
+ * number a fixed code; nothing is sent to it, and its orders are marked as tests.
+ */
+export function reviewAccount(): { phone: string; code: string } | null {
+  const phone = process.env.OAUTH_REVIEW_PHONE?.trim();
+  const code = process.env.OAUTH_REVIEW_CODE?.trim();
+  return phone && code && /^\d{6}$/.test(code) ? { phone, code } : null;
+}
+
+export const isReviewPhone = (phone: string) => reviewAccount()?.phone === phone;
+
 export async function createOtp(phone: string): Promise<{ challengeId: string; code: string }> {
-  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  const review = reviewAccount();
+  const code = review && review.phone === phone ? review.code : String(randomInt(0, 1_000_000)).padStart(6, "0");
   const [row] = await db
     .insert(otpChallenges)
     .values({ phone, codeHash: "pending", expiresAt: new Date(Date.now() + OTP_TTL_S * 1000) })

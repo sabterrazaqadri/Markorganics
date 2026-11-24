@@ -10,6 +10,7 @@ import { getActiveProducts, getProductBySlug } from "@/lib/queries/products";
 import { getOrderByNumberAndPhone } from "@/lib/queries/orders";
 import { quoteCart } from "@/app/(store)/checkout/actions";
 import { placeOrderCore, type OrderSource } from "@/lib/orders/place-order";
+import { isReviewPhone } from "@/lib/oauth/core";
 import { getDeliverySettings, getStoreSettings, paymentMethodsOf } from "@/lib/settings";
 import { normalizeOrderNumber } from "@/lib/order-number";
 import { rateLimit } from "@/lib/rate-limit";
@@ -368,7 +369,7 @@ export function registerMarkorganicTools(server: McpServer) {
           altPhone: input.altPhone,
           city: input.city,
           address: input.address,
-          notes: input.notes,
+          notes: isReviewPhone(phone) ? `REVIEW TEST ORDER - do not ship. ${input.notes ?? ""}`.trim().slice(0, 300) : input.notes,
           items: input.items,
           discountCode: input.discountCode,
         },
