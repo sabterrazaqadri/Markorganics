@@ -244,7 +244,7 @@ export type OtpCheck = { ok: true; phone: string } | { ok: false; message: strin
 export async function verifyOtp(challengeId: string, code: string): Promise<OtpCheck> {
   if (!/^[0-9a-f-]{36}$/.test(challengeId) || !/^\d{6}$/.test(code)) return { ok: false, message: "Enter the 6-digit code." };
   const [row] = await db.select().from(otpChallenges).where(eq(otpChallenges.id, challengeId)).limit(1);
-  if (!row || row.consumedAt) return { ok: false, message: "This code has expired. Request a new one." };
+  if (!row || row.consumedAt || !row.phone) return { ok: false, message: "This code has expired. Request a new one." };
   if (row.expiresAt.getTime() < Date.now()) return { ok: false, message: "This code has expired. Request a new one." };
   if (row.attempts >= OTP_MAX_ATTEMPTS) return { ok: false, message: "Too many wrong tries. Request a new code." };
 
@@ -261,6 +261,78 @@ export async function verifyOtp(challengeId: string, code: string): Promise<OtpC
     .returning({ id: otpChallenges.id });
   if (consumed.length === 0) return { ok: false, message: "This code was already used. Request a new one." };
   return { ok: true, phone: row.phone };
+}
+
+/* ----------------------------------------------------------- reverse OTP */
+
+/*
+ * Reverse OTP: instead of us sending a code (which needs a Meta
+ * authentication template and business verification), the customer sends
+ * "MARK LOGIN 12345678" to our WhatsApp number. The webhook matches the code
+ * and records the sender's number, which WhatsApp itself has verified.
+ *
+ * A pending challenge has phone = "" until the message arrives.
+ */
+export const REVERSE_TTL_S = 10 * 60;
+export const REVERSE_PREFIX = "MARK LOGIN";
+const reverseHash = (code: string) => sha256(`${otpPepper()}:reverse:${code}`);
+
+export async function createReverseOtp(): Promise<{ challengeId: string; code: string }> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = String(randomInt(10_000_000, 100_000_000));
+    const hash = reverseHash(code);
+    const [clash] = await db
+      .select({ id: otpChallenges.id })
+      .from(otpChallenges)
+      .where(and(eq(otpChallenges.codeHash, hash), gt(otpChallenges.expiresAt, new Date())))
+      .limit(1);
+    if (clash) continue;
+    const [row] = await db
+      .insert(otpChallenges)
+      .values({ phone: "", codeHash: hash, expiresAt: new Date(Date.now() + REVERSE_TTL_S * 1000) })
+      .returning({ id: otpChallenges.id });
+    return { challengeId: row.id, code };
+  }
+  throw new Error("Could not allocate a login code");
+}
+
+/** Pulls the code out of an inbound WhatsApp text, e.g. "MARK LOGIN 12345678". */
+export function parseReverseCode(text: string): string | null {
+  const m = text.toUpperCase().match(/MARK\s*LOGIN\D{0,3}(\d{8})\b/);
+  return m ? m[1] : null;
+}
+
+/** Called by the WhatsApp webhook. Returns true when the code matched a pending login. */
+export async function completeReverseOtp(code: string, phone: string): Promise<boolean> {
+  const updated = await db
+    .update(otpChallenges)
+    .set({ phone })
+    .where(
+      and(
+        eq(otpChallenges.codeHash, reverseHash(code)),
+        eq(otpChallenges.phone, ""),
+        isNull(otpChallenges.consumedAt),
+        gt(otpChallenges.expiresAt, new Date()),
+      ),
+    )
+    .returning({ id: otpChallenges.id });
+  return updated.length > 0;
+}
+
+export type ReverseStatus = { state: "waiting" } | { state: "expired" } | { state: "verified"; phone: string };
+
+/** Polled by the sign-in page. Consumes the challenge the first time it reports "verified". */
+export async function claimReverseOtp(challengeId: string): Promise<ReverseStatus> {
+  if (!/^[0-9a-f-]{36}$/.test(challengeId)) return { state: "expired" };
+  const [row] = await db.select().from(otpChallenges).where(eq(otpChallenges.id, challengeId)).limit(1);
+  if (!row || row.consumedAt || row.expiresAt.getTime() < Date.now()) return { state: "expired" };
+  if (!row.phone) return { state: "waiting" };
+  const consumed = await db
+    .update(otpChallenges)
+    .set({ consumedAt: new Date() })
+    .where(and(eq(otpChallenges.id, row.id), isNull(otpChallenges.consumedAt)))
+    .returning({ id: otpChallenges.id });
+  return consumed.length ? { state: "verified", phone: row.phone } : { state: "expired" };
 }
 
 /** Seconds until another code may be sent to this phone (one per 45 s). */

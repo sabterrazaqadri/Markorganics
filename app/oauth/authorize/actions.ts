@@ -3,7 +3,13 @@
 import { headers } from "next/headers";
 import { normalizePkPhone } from "@/lib/phone";
 import { rateLimit } from "@/lib/rate-limit";
+import { WHATSAPP_NUMBER } from "@/config/commerce";
+import { getStoreSettings } from "@/lib/settings";
 import {
+  REVERSE_PREFIX,
+  claimReverseOtp,
+  createReverseOtp,
+  isReviewPhone,
   createOtp,
   issueAuthorizationCode,
   otpCooldownSeconds,
@@ -11,7 +17,7 @@ import {
   verifyOtp,
   type AuthorizeParams,
 } from "@/lib/oauth/core";
-import { deliverLoginOtp } from "@/lib/oauth/otp-delivery";
+import { deliverLoginOtp, sendOtpEnabled } from "@/lib/oauth/otp-delivery";
 
 async function ip(): Promise<string> {
   const h = await headers();
@@ -31,6 +37,9 @@ export async function sendCodeAction(params: AuthorizeParams, rawPhone: string):
 
   if (!rateLimit(`otp:ip:${await ip()}`, 10, 10 * 60_000).ok || !rateLimit(`otp:phone:${phone}`, 4, 10 * 60_000).ok) {
     return { ok: false, message: "Too many codes requested. Please wait 10 minutes and try again." };
+  }
+  if (!sendOtpEnabled() && !isReviewPhone(phone)) {
+    return { ok: false, message: "Please use the “Verify with WhatsApp” button above." };
   }
   const wait = await otpCooldownSeconds(phone);
   if (wait > 0) return { ok: false, message: `Please wait ${wait} seconds before requesting another code.` };
@@ -62,4 +71,40 @@ export async function denyAction(params: AuthorizeParams): Promise<{ redirectTo:
   u.searchParams.set("error_description", "The customer cancelled sign-in.");
   if (valid.params.state) u.searchParams.set("state", valid.params.state);
   return { redirectTo: u.toString() };
+}
+
+/* ----------------------------------------------------------- reverse OTP */
+
+/** The WhatsApp Cloud API number customers send the login message to (digits only). */
+async function loginNumber(): Promise<string> {
+  const fromEnv = process.env.OAUTH_WHATSAPP_NUMBER?.replace(/\D/g, "");
+  if (fromEnv) return fromEnv;
+  const store = await getStoreSettings();
+  return (store.contactPhone || WHATSAPP_NUMBER).replace(/\D/g, "");
+}
+
+export type StartReverseResult =
+  | { ok: true; challengeId: string; message: string; waLink: string; number: string }
+  | { ok: false; message: string };
+
+export async function startReverseAction(params: AuthorizeParams): Promise<StartReverseResult> {
+  const valid = await validateAuthorize(params);
+  if (!valid.ok) return { ok: false, message: valid.message };
+  if (!rateLimit(`otp:reverse:${await ip()}`, 15, 10 * 60_000).ok) {
+    return { ok: false, message: "Too many attempts. Please wait a few minutes." };
+  }
+  const { challengeId, code } = await createReverseOtp();
+  const number = await loginNumber();
+  const message = `${REVERSE_PREFIX} ${code}`;
+  return { ok: true, challengeId, message, number, waLink: `https://wa.me/${number}?text=${encodeURIComponent(message)}` };
+}
+
+export type PollReverseResult = { state: "waiting" } | { state: "expired" } | { state: "done"; redirectTo: string };
+
+export async function pollReverseAction(params: AuthorizeParams, challengeId: string): Promise<PollReverseResult> {
+  const valid = await validateAuthorize(params);
+  if (!valid.ok) return { state: "expired" };
+  const status = await claimReverseOtp(challengeId);
+  if (status.state !== "verified") return status;
+  return { state: "done", redirectTo: await issueAuthorizationCode(valid.params, status.phone) };
 }

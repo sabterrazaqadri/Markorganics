@@ -2,31 +2,40 @@
 
 Endpoint: `https://www.markorganic.com/api/mcp` (Streamable HTTP, OAuth 2.1).
 
-## Sign-in (WhatsApp OTP)
+## Sign-in (WhatsApp, reverse OTP)
 
 Every MCP request needs a bearer token. On first connect the assistant gets a
 401 pointing at `/.well-known/oauth-protected-resource`, discovers
-`/.well-known/oauth-authorization-server`, registers itself at
-`/oauth/register` (or uses a client ID metadata document), and opens
-`/oauth/authorize`. The customer enters their WhatsApp number, receives a
-6-digit code via the `mark_login_otp` template, and is sent back to the
-assistant. Tokens: access 1 hour, refresh 90 days (rotated on use), all stored
-hashed (`lib/oauth/core.ts`). The verified phone is attached to every tool
-call, so customers never type it and can only see their own orders.
+`/.well-known/oauth-authorization-server`, registers at `/oauth/register` (or
+uses a client ID metadata document) and opens `/oauth/authorize`.
 
-Before going live:
-1. Create the tables: `docs/sql/2026-11-mcp-oauth.sql` (or `npm run db:push`).
-2. In Meta Business Manager create an **Authentication** template named
-   `mark_login_otp` (English, "Copy code" button) and wait for approval.
-3. Admin → Integrations → WhatsApp templates: add `mark_login_otp`, category
-   authentication, status approved. Keep the WhatsApp integration out of dry run.
-   (`WHATSAPP_OTP_TEMPLATE` overrides the template name.)
-4. Directory review: set `OAUTH_REVIEW_PHONE` (e.g. `+923000000000`) and
-   `OAUTH_REVIEW_CODE` (6 digits) in Vercel. That one number signs in with the
-   fixed code, nothing is sent to WhatsApp, and its orders carry
-   "REVIEW TEST ORDER - do not ship" in the notes. Give both to reviewers.
-5. Local development: `OAUTH_DEV_SHOW_OTP=1` shows the code on screen instead
-   of sending it (ignored in production).
+There the customer taps **Verify with WhatsApp**: WhatsApp opens with
+`MARK LOGIN 12345678` already typed, they press Send, the WhatsApp webhook
+(`lib/whatsapp/inbound.ts`) matches the code to the sender's number, replies
+"✅ Verified", and the sign-in page (polling every 2 s) returns them to the
+assistant. No Meta template or business verification is needed, and the number
+is proven by WhatsApp itself. Codes live 10 minutes and are single use.
+
+Tokens: access 1 hour, refresh 90 days (rotated on use), stored hashed
+(`lib/oauth/core.ts`). The verified phone is attached to every tool call, so
+customers never type it and only see their own orders.
+
+### Setup
+
+1. Tables: `docs/sql/2026-11-mcp-oauth.sql` (applied to production 2026-11-25).
+2. The WhatsApp webhook must be live: in the Meta app, WhatsApp → Configuration,
+   callback `https://www.markorganic.com/api/webhooks/whatsapp`, verify token and
+   app secret matching Admin → Integrations → WhatsApp, and the **messages**
+   field subscribed.
+3. `OAUTH_WHATSAPP_NUMBER`: the Cloud API number customers write to (digits,
+   e.g. `923001234567`). Defaults to the store contact phone.
+4. Directory review: `OAUTH_REVIEW_PHONE` (e.g. `+923000000000`) and
+   `OAUTH_REVIEW_CODE` (6 digits). Reviewers use "I have a login code" with
+   these; nothing is sent, and their orders are noted "REVIEW TEST ORDER".
+5. Optional, after Meta business verification: an approved Authentication
+   template `mark_login_otp` plus `OAUTH_SEND_OTP=1` also lets customers receive
+   a code instead of sending one.
+6. Local development: `OAUTH_DEV_SHOW_OTP=1` shows send-codes on screen.
 
 | Tool | What it does | Writes? |
 |---|---|---|

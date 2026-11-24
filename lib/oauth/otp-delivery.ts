@@ -5,6 +5,12 @@ import { isReviewPhone } from "@/lib/oauth/core";
 
 export const OTP_TEMPLATE_NAME = process.env.WHATSAPP_OTP_TEMPLATE || "mark_login_otp";
 
+/**
+ * Sending codes needs an approved Meta *authentication* template, which needs
+ * business verification. Until then only reverse OTP is offered.
+ */
+export const sendOtpEnabled = () => process.env.OAUTH_SEND_OTP === "1" || showOtpOnScreen();
+
 /** Local development only: show the code on screen instead of needing WhatsApp. */
 export const showOtpOnScreen = () => process.env.NODE_ENV !== "production" && process.env.OAUTH_DEV_SHOW_OTP === "1";
 

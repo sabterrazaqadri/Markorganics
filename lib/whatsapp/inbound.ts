@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { customers, whatsappMessages } from "@/lib/db/schema";
 import { logCall } from "@/lib/integrations/http";
 import { normalizePkPhone } from "@/lib/phone";
+import { completeReverseOtp, parseReverseCode } from "@/lib/oauth/core";
+import { sendText } from "@/lib/whatsapp/client";
 
 /**
  * Inbound Cloud API webhooks: customer messages, and delivery receipts for
@@ -97,7 +99,10 @@ export async function processWebhook(payload: unknown): Promise<WebhookOutcome> 
           })
           .onConflictDoNothing({ target: whatsappMessages.wamid })
           .returning({ id: whatsappMessages.id });
-        if (inserted.length) messages += 1;
+        if (inserted.length) {
+          messages += 1;
+          await handleLoginMessage(text, from);
+        }
       }
 
       for (const status of value.statuses ?? []) {
@@ -129,6 +134,32 @@ export async function processWebhook(payload: unknown): Promise<WebhookOutcome> 
   });
 
   return { messages, statuses };
+}
+
+/**
+ * "MARK LOGIN 12345678" from a customer signs them in to an AI assistant
+ * (reverse OTP, see lib/oauth/core.ts). Their number is the one WhatsApp
+ * delivered the message from, so no code ever has to be sent to them.
+ */
+async function handleLoginMessage(text: string, waId: string): Promise<void> {
+  const code = parseReverseCode(text);
+  if (!code) return;
+  try {
+    const phone = normalizePkPhone(`+${waId}`) ?? normalizePkPhone(waId);
+    const matched = phone ? await completeReverseOtp(code, phone) : false;
+    // The customer just wrote to us, so this reply is inside the free 24-hour window.
+    await sendText(
+      waId,
+      matched
+        ? "✅ Verified! Aapka number confirm ho gaya. Ab wapas Claude / ChatGPT par jayein, sign-in khud mukammal ho jayega."
+        : phone
+          ? "Yeh login code expire ho chuka hai ya ghalat hai. Sign-in page par dobara 'WhatsApp se verify karein' dabayein."
+          : "Abhi sirf Pakistani WhatsApp numbers se sign-in ho sakta hai.",
+      { trigger: "login_reverse_otp" },
+    );
+  } catch (err) {
+    console.error("reverse OTP handling failed", err);
+  }
 }
 
 async function findCustomerId(waId: string): Promise<string | null> {
