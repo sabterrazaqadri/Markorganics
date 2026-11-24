@@ -18,6 +18,16 @@ export interface DefaultTemplate {
 
 export const DEFAULT_WHATSAPP_TEMPLATES: DefaultTemplate[] = [
   {
+    // Create in Meta as category AUTHENTICATION with a "Copy code" button.
+    // Meta fixes the wording of authentication templates; this mirrors it.
+    name: "mark_login_otp",
+    language: "en",
+    category: "authentication",
+    trigger: "login_otp",
+    body: "{{1}} is your verification code. For your security, do not share this code.",
+    variables: ["otp_code"],
+  },
+  {
     name: "mark_order_placed",
     language: "en",
     category: "utility",

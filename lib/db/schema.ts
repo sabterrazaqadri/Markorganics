@@ -1334,3 +1334,78 @@ export type CodRemittance = typeof codRemittances.$inferSelect;
 export type CodRemittanceLine = typeof codRemittanceLines.$inferSelect;
 export type WhatsappTemplate = typeof whatsappTemplates.$inferSelect;
 export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
+
+/* ------------------------------------------------- AI assistant sign-in (OAuth) */
+
+/**
+ * OAuth clients: AI assistants (Claude, ChatGPT, ...) that connect to /api/mcp.
+ * "dcr" rows come from dynamic client registration; "cimd" rows cache a
+ * client ID metadata document fetched from the https client_id itself.
+ */
+export const oauthClients = pgTable(
+  "oauth_clients",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    clientId: text("client_id").notNull(),
+    clientName: text("client_name").notNull().default(""),
+    redirectUris: text("redirect_uris").array().notNull().default(sql`'{}'::text[]`),
+    kind: text("kind").notNull().default("dcr"),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("oauth_clients_client_id_idx").on(t.clientId)],
+);
+
+/** One-time WhatsApp login codes. Only a hash of the code is stored. */
+export const otpChallenges = pgTable(
+  "otp_challenges",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    phone: text("phone").notNull(),
+    codeHash: text("code_hash").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("otp_challenges_phone_idx").on(t.phone, t.createdAt)],
+);
+
+/** Short-lived authorization codes (PKCE). Stored hashed, single use. */
+export const oauthCodes = pgTable("oauth_codes", {
+  codeHash: text("code_hash").primaryKey(),
+  clientId: text("client_id").notNull(),
+  redirectUri: text("redirect_uri").notNull(),
+  codeChallenge: text("code_challenge").notNull(),
+  phone: text("phone").notNull(),
+  scope: text("scope").notNull().default(""),
+  resource: text("resource"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Access and refresh tokens issued to assistants. Stored hashed. */
+export const oauthTokens = pgTable(
+  "oauth_tokens",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    accessHash: text("access_hash").notNull(),
+    refreshHash: text("refresh_hash").notNull(),
+    clientId: text("client_id").notNull(),
+    phone: text("phone").notNull(),
+    scope: text("scope").notNull().default(""),
+    resource: text("resource"),
+    accessExpiresAt: timestamp("access_expires_at", { withTimezone: true }).notNull(),
+    refreshExpiresAt: timestamp("refresh_expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("oauth_tokens_access_idx").on(t.accessHash),
+    uniqueIndex("oauth_tokens_refresh_idx").on(t.refreshHash),
+    index("oauth_tokens_phone_idx").on(t.phone),
+  ],
+);
+
+export type OauthClient = typeof oauthClients.$inferSelect;
