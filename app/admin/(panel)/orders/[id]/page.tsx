@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { aiOrderSource } from "@/lib/orders/source";
 import { notFound } from "next/navigation";
 import { getOrderById } from "@/lib/queries/orders";
 import { getPreviousOrdersByPhone, assessRisk, deliveryRate } from "@/lib/admin/customers";
@@ -75,6 +76,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         }
         actions={
           <>
+            {aiOrderSource(order.tags) ? (
+              <span className="a-badge a-badge-info" title="Placed through an AI assistant">
+                AI order · {aiOrderSource(order.tags)}
+              </span>
+            ) : null}
             <OrderStatusPill status={order.status} />
             <a href={`/admin/orders/${order.id}/print`} target="_blank" rel="noopener" className="a-btn a-btn-xs">
               Packing slip
