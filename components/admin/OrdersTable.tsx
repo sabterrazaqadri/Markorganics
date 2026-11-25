@@ -1,5 +1,6 @@
 "use client";
 
+import { aiOrderSource } from "@/lib/orders/source";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { OrderRow } from "@/lib/queries/orders";
@@ -170,6 +171,11 @@ export function OrdersTable({
                     <Link href={`/admin/orders/${row.id}`} prefetch={false} className="font-semibold text-[var(--a-info)] hover:underline">
                       {row.orderNumber}
                     </Link>
+                    {aiOrderSource(row.tags) ? (
+                      <span className="a-badge a-badge-info ml-1.5" title="Placed through an AI assistant">
+                        AI · {aiOrderSource(row.tags)}
+                      </span>
+                    ) : null}
                   </td>
                   <td>
                     <span className="block max-w-[180px] truncate">{row.customerName}</span>
