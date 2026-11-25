@@ -116,6 +116,7 @@ export async function sendTemplate(
   templateName: string,
   variables: string[],
   context: SendContext = {},
+  options: { copyCode?: string } = {},
 ): Promise<SendResult> {
   const c = await ctx();
   const phone = toWaNumber(to);
@@ -171,9 +172,13 @@ export async function sendTemplate(
     template: {
       name: template.name,
       language: { code: template.language },
-      components: variables.length
-        ? [{ type: "body", parameters: variables.map((text) => ({ type: "text", text })) }]
-        : [],
+      components: [
+        ...(variables.length ? [{ type: "body", parameters: variables.map((text) => ({ type: "text", text })) }] : []),
+        // Authentication templates carry the code again on their copy-code button.
+        ...(options.copyCode
+          ? [{ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: options.copyCode }] }]
+          : []),
+      ],
     },
   };
 
